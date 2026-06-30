@@ -1,0 +1,2132 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NINA AI Assistant v10</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+:root {
+    --bg-primary: #0a0e1a;
+    --bg-secondary: #111827;
+    --bg-card: rgba(26, 35, 50, 0.7);
+    --bg-card-solid: #1a2332;
+    --bg-hover: rgba(36, 52, 71, 0.8);
+    --accent: #3b82f6;
+    --accent-hover: #2563eb;
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --text-primary: #f3f4f6;
+    --text-secondary: #9ca3af;
+    --border: rgba(31, 41, 55, 0.5);
+    --glass-border: rgba(255, 255, 255, 0.08);
+}
+html, body { padding-bottom: 10px; }
+body {
+    background: var(--bg-primary);
+    background-image:
+        radial-gradient(at 20% 30%, rgba(59, 130, 246, 0.08) 0px, transparent 50%),
+        radial-gradient(at 80% 70%, rgba(139, 92, 246, 0.06) 0px, transparent 50%);
+    color: var(--text-primary);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+    font-size: 14px;
+}
+.card { background: var(--bg-card); backdrop-filter: blur(12px); border: 1px solid var(--glass-border); border-radius: 12px; transition: all 0.2s ease; }
+.card:hover { border-color: rgba(255, 255, 255, 0.12); }
+.btn { padding: 0.6rem 1.1rem; border-radius: 8px; transition: all 0.2s ease; font-weight: 500; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; cursor: pointer; border: 1px solid transparent; font-size: 0.9rem; white-space: nowrap; }
+.btn:active { transform: scale(0.97); }
+.btn-primary { background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%); color: white; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); }
+.btn-primary:hover { box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4); transform: translateY(-1px); }
+.btn-success { background: linear-gradient(135deg, var(--success) 0%, #059669 100%); color: white; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); }
+.btn-success:hover { transform: translateY(-1px); }
+.btn-danger { background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%); color: white; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); }
+.btn-danger:hover { transform: translateY(-1px); }
+.btn-warning { background: linear-gradient(135deg, var(--warning) 0%, #d97706 100%); color: white; }
+.btn-secondary { background: var(--bg-hover); color: var(--text-primary); border: 1px solid var(--glass-border); }
+.btn-secondary:hover { background: rgba(45, 66, 89, 0.9); border-color: rgba(255, 255, 255, 0.15); }
+.status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+.status-online { background: var(--success); box-shadow: 0 0 10px var(--success); animation: pulse-green 2s infinite; }
+.status-offline { background: var(--danger); }
+.status-thinking { background: var(--warning); animation: pulse-thinking 1.2s infinite; box-shadow: 0 0 14px var(--warning); }
+@keyframes pulse-green { 0%, 100% { box-shadow: 0 0 8px var(--success); } 50% { box-shadow: 0 0 16px var(--success); } }
+@keyframes pulse-thinking { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.5; transform: scale(1.3); } }
+@keyframes thinking-dots { 0% { content: '.'; } 33% { content: '..'; } 66% { content: '...'; } }
+.thinking::after { content: '.'; animation: thinking-dots 1s infinite; color: var(--warning); margin-left: 0.25rem; }
+.sidebar { background: rgba(17, 24, 39, 0.8); backdrop-filter: blur(12px); border-right: 1px solid var(--glass-border); }
+.sidebar-header { display: flex; align-items: center; justify-content: center; text-align: center; padding: 1rem; border-bottom: 1px solid rgba(31, 41, 55, 0.5); }
+.nav-item { padding: 0.6rem 0.9rem; cursor: pointer; border-radius: 8px; transition: all 0.2s; display: flex; align-items: center; gap: 0.7rem; margin: 0.15rem 0.5rem; font-size: 0.88rem; color: var(--text-secondary); }
+.nav-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+.nav-item.active { background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%); color: white; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3); }
+.nav-item i { width: 18px; text-align: center; }
+.nav-section { font-size: 0.68rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.08em; padding: 0.6rem 1rem 0.2rem 1rem; opacity: 0.6; margin-top: 0.5rem; }
+.chat-message { padding: 0.7rem 1rem; border-radius: 12px; margin: 0.5rem 0; max-width: 92%; word-wrap: break-word; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+.chat-user { background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%); color: white; margin-left: auto; border-bottom-right-radius: 4px; }
+.chat-ai { background: var(--bg-hover); border: 1px solid var(--glass-border); border-bottom-left-radius: 4px; }
+.chat-system { background: rgba(16, 185, 129, 0.1); border-left: 3px solid var(--success); font-family: 'Consolas', monospace; font-size: 0.875rem; color: var(--success); }
+.log-entry { padding: 0.15rem 0.4rem; font-family: 'Consolas', monospace; font-size: 0.75rem; border-bottom: 1px solid rgba(31, 41, 55, 0.3); }
+.log-DEBUG { color: #9ca3af; } .log-INFO { color: #60a5fa; } .log-WARNING { color: #f59e0b; } .log-ERROR { color: #ef4444; font-weight: bold; }
+input, select, textarea { background: rgba(10, 14, 26, 0.6); border: 1px solid var(--glass-border); color: var(--text-primary); padding: 0.55rem 0.85rem; border-radius: 8px; transition: all 0.2s; font-size: 0.9rem; }
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15); }
+.telemetry-item { padding: 0.5rem 0.9rem; border-radius: 10px; background: rgba(31, 41, 55, 0.5); border: 1px solid var(--glass-border); font-size: 0.875rem; display: flex; align-items: center; gap: 0.6rem; text-align: left; }
+.telemetry-label { color: var(--text-secondary); font-weight: 500; flex-shrink: 0; }
+.telemetry-value { color: var(--text-primary); font-weight: 600; word-break: break-word; }
+.modal-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 50; animation: fadeIn 0.2s ease; }
+.modal-content { background: var(--bg-card-solid); border-radius: 16px; max-width: 800px; max-height: 85vh; overflow-y: auto; width: 90%; border: 1px solid var(--glass-border); box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5); }
+.catalog-results { position: absolute; top: 100%; left: 0; right: 0; background: var(--bg-card-solid); border: 1px solid var(--glass-border); border-radius: 8px; max-height: 300px; overflow-y: auto; z-index: 10; margin-top: 4px; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3); }
+.catalog-item { padding: 0.7rem 1rem; cursor: pointer; border-bottom: 1px solid var(--glass-border); transition: background 0.15s; display: flex; justify-content: space-between; align-items: center; }
+.catalog-item:hover { background: var(--bg-hover); }
+.catalog-item:last-child { border-bottom: none; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(100, 116, 139, 0.4); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(100, 116, 139, 0.6); }
+.chat-panel { width: 55%; min-width: 420px; flex-shrink: 0; }
+.central-panel { flex: 1; min-width: 380px; }
+.section-title { font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.6rem; padding-left: 0.25rem; }
+.info-row { display: flex; align-items: center; gap: 0.5rem; padding: 0.2rem 0; font-size: 0.85rem; flex-wrap: wrap; }
+.card-header { padding: 0.85rem 1.1rem; border-bottom: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem; }
+.card-title { font-weight: 600; font-size: 1rem; display: flex; align-items: center; gap: 0.6rem; }
+.card-body { padding: 1.1rem; }
+.metric-box { background: rgba(17, 24, 39, 0.6); border: 1px solid var(--glass-border); border-radius: 10px; padding: 0.7rem 0.9rem; text-align: center; }
+.metric-label { font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.3rem; }
+.metric-value { font-size: 1.3rem; font-weight: 700; }
+.seq-status-box { background: rgba(17, 24, 39, 0.6); border: 1px solid var(--glass-border); border-radius: 12px; padding: 1.2rem 1rem; text-align: center; min-height: 100px; display: flex; flex-direction: column; justify-content: center; }
+.seq-label { font-size: 0.85rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; font-weight: 600; }
+.seq-value { font-size: 1.1rem; font-weight: 700; word-break: break-word; line-height: 1.3; }
+.quick-group-title { font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.75rem; margin-bottom: 0.5rem; padding-left: 0.25rem; display: flex; align-items: center; gap: 0.5rem; }
+.quick-group-title:first-child { margin-top: 0; }
+.btn-filter { padding: 0.6rem 1.1rem; border-radius: 8px; transition: all 0.2s ease; font-weight: 500; display: inline-flex; align-items: flex-start; gap: 0.5rem; cursor: pointer; border: 1px solid var(--glass-border); font-size: 0.9rem; background: var(--bg-hover); color: var(--text-primary); white-space: normal; word-break: break-word; text-align: left; height: auto; }
+.btn-filter:hover { background: rgba(45, 66, 89, 0.9); border-color: rgba(255, 255, 255, 0.15); }
+.btn-filter:active { transform: scale(0.97); }
+.kv-row { display: grid; grid-template-columns: 1fr 1.2fr; gap: 0.5rem; padding: 0.35rem 0; border-bottom: 1px solid rgba(31, 41, 55, 0.3); font-size: 0.85rem; }
+.kv-row:last-child { border-bottom: none; }
+.kv-key { color: var(--text-secondary); font-weight: 500; }
+.kv-val { color: var(--text-primary); font-weight: 600; word-break: break-word; font-family: 'Consolas', monospace; }
+.gauge-container { position: relative; display: flex; flex-direction: column; align-items: center; padding: 0.5rem; }
+.gauge-value { font-size: 1.5rem; font-weight: 800; line-height: 1; }
+.gauge-label { font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; margin-top: 0.2rem; }
+.gauge-unit { font-size: 0.7rem; color: var(--text-secondary); }
+.telemetry-card { background: rgba(17, 24, 39, 0.8); border: 1px solid var(--glass-border); border-radius: 12px; padding: 1rem; transition: all 0.2s; display: flex; flex-direction: column; min-height: 180px; }
+.telemetry-card:hover { border-color: rgba(255, 255, 255, 0.15); background: rgba(17, 24, 39, 0.9); }
+.telemetry-card-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--glass-border); }
+.telemetry-card-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
+.env-card { background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(59, 130, 246, 0.08) 100%); border: 1px solid rgba(16, 185, 129, 0.2); }
+.header-card { display: flex; flex-direction: column; min-height: 120px; }
+.seq-tree { font-family: 'Consolas', monospace; font-size: 0.85rem; }
+.seq-tree-item { padding: 0.5rem 0.7rem; border-radius: 8px; margin: 0.2rem 0; display: flex; align-items: center; gap: 0.6rem; transition: all 0.2s; border-left: 3px solid transparent; }
+.seq-tree-item.running { background: rgba(16, 185, 129, 0.2); border-left-color: var(--success); font-weight: 600; box-shadow: 0 0 10px rgba(16, 185, 129, 0.3); }
+.seq-tree-item.completed { opacity: 0.6; background: rgba(107, 114, 128, 0.1); border-left-color: #6b7280; }
+.seq-tree-item.pending { opacity: 0.8; background: rgba(59, 130, 246, 0.1); border-left-color: var(--accent); }
+.seq-tree-item.container { font-weight: 700; color: var(--text-secondary); background: rgba(139, 92, 246, 0.1); border-left-color: #8b5cf6; }
+.seq-tree-item.active { background: rgba(245, 158, 11, 0.25) !important; border-left-color: var(--warning) !important; box-shadow: 0 0 12px rgba(245, 158, 11, 0.4); animation: pulse-active 1.5s infinite; font-weight: 700 !important; }
+@keyframes pulse-active { 0%, 100% { box-shadow: 0 0 12px rgba(245, 158, 11, 0.4); } 50% { box-shadow: 0 0 20px rgba(245, 158, 11, 0.7); } }
+.seq-tree-icon { width: 16px; flex-shrink: 0; text-align: center; }
+.seq-tree-info { margin-left: auto; font-size: 0.75rem; color: var(--text-secondary); background: rgba(0,0,0,0.2); padding: 0.2rem 0.5rem; border-radius: 4px; white-space: nowrap; }
+.seq-tree-params { display: flex; flex-wrap: wrap; gap: 0.3rem; margin-top: 0.2rem; }
+.seq-tree-param { background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); padding: 0.1rem 0.4rem; border-radius: 4px; font-size: 0.7rem; color: #93c5fd; }
+.seq-tree-type { font-size: 0.7rem; color: #9ca3af; opacity: 0.7; }
+.chart-container { position: relative; height: 220px; width: 100%; }
+.ai-stats-compact { display: flex; gap: 0.75rem; font-size: 0.75rem; flex-wrap: wrap; }
+.ai-stat-item { display: flex; align-items: center; gap: 0.25rem; }
+.ai-stat-label { color: var(--text-secondary); }
+.ai-stat-value { font-weight: 600; }
+.focuser-status-icon { margin-left: auto; flex-shrink: 0; display: flex; align-items: center; justify-content: center; min-width: 32px; min-height: 32px; }
+.filter-badge { background: linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(168, 85, 247, 0.2) 100%); border: 1px solid rgba(139, 92, 246, 0.4); padding: 0.25rem 0.6rem; border-radius: 6px; font-size: 0.85rem; font-weight: 600; color: #c4b5fd; display: inline-flex; align-items: center; gap: 0.4rem; }
+.filter-list-item { display: flex; justify-content: space-between; align-items: center; padding: 0.35rem 0.5rem; border-radius: 6px; background: rgba(31, 41, 55, 0.4); margin: 0.15rem 0; font-size: 0.8rem; }
+.filter-list-item.active { background: rgba(139, 92, 246, 0.15); border-left: 2px solid #8b5cf6; font-weight: 600; }
+.telemetry-grid { display: grid; grid-template-columns: repeat(1, 1fr); gap: 1rem; }
+@media (min-width: 768px) { .telemetry-grid { grid-template-columns: repeat(2, 1fr); } }
+.telemetry-grid > * { min-height: 160px; }
+.sequence-status-line { display: flex; align-items: center; gap: 1rem; padding: 1rem; background: rgba(17, 24, 39, 0.6); border: 1px solid var(--glass-border); border-radius: 12px; }
+.sequence-status-line .status-icon { flex: 0 0 10%; display: flex; justify-content: center; }
+.sequence-status-line .status-icon .icon-circle { width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.sequence-status-line .target-block { flex: 0 0 20%; min-width: 0; }
+.sequence-status-line .stage-block { flex: 0 0 70%; min-width: 0; }
+.disconnected-overlay { background: rgba(239, 68, 68, 0.1); border: 2px dashed rgba(239, 68, 68, 0.4); border-radius: 12px; padding: 2rem; text-align: center; color: #ef4444; }
+.disconnected-overlay i { font-size: 3rem; margin-bottom: 1rem; opacity: 0.5; }
+.prometheus-category { background: rgba(17, 24, 39, 0.6); border: 1px solid var(--glass-border); border-radius: 12px; padding: 1rem; margin-bottom: 1rem; }
+.prometheus-category-title { font-size: 0.9rem; font-weight: 700; color: var(--text-primary); margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem; padding-bottom: 0.5rem; border-bottom: 1px solid var(--glass-border); }
+.prometheus-metric { display: flex; justify-content: space-between; align-items: center; padding: 0.4rem 0.6rem; border-radius: 6px; background: rgba(31, 41, 55, 0.4); margin: 0.3rem 0; font-size: 0.85rem; }
+.prometheus-metric:hover { background: rgba(45, 55, 72, 0.5); }
+.prometheus-metric-name { color: var(--text-secondary); font-family: monospace; font-size: 0.8rem; }
+.prometheus-metric-value { font-weight: 700; font-size: 1rem; }
+.session-frame-row { display: grid; grid-template-columns: 50px 1fr 80px 80px 80px 80px 80px; gap: 0.5rem; padding: 0.3rem 0.5rem; border-bottom: 1px solid rgba(31, 41, 55, 0.3); font-size: 0.8rem; align-items: center; }
+.session-frame-row:hover { background: rgba(59, 130, 246, 0.05); }
+.session-frame-header { font-weight: 700; color: var(--text-secondary); text-transform: uppercase; font-size: 0.7rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.3rem; margin-bottom: 0.3rem; }
+.inner-tab { padding: 0.6rem 1.2rem; cursor: pointer; border-radius: 8px; transition: all 0.2s; font-size: 0.9rem; font-weight: 500; color: var(--text-secondary); border: 1px solid transparent; }
+.inner-tab:hover { background: var(--bg-hover); color: var(--text-primary); }
+.inner-tab.active { background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hover) 100%); color: white; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3); }
+.inner-tab i { margin-right: 0.4rem; }
+</style>
+</head>
+<body x-data="app()" x-init="init()">
+<div class="flex h-screen overflow-hidden">
+<aside class="sidebar w-56 flex-shrink-0 flex flex-col overflow-y-auto">
+    <div class="sidebar-header">
+        <div>
+            <h1 class="text-lg font-bold flex items-center gap-2 justify-center">
+                <i class="fas fa-satellite text-blue-400"></i><span>NINA AI</span>
+            </h1>
+            <div class="text-xs text-gray-500 mt-1">Advanced Control v10</div>
+        </div>
+    </div>
+    <nav class="flex-1 py-3">
+        <div class="nav-section">Главное</div>
+        <template x-for="tab in tabs.filter(t => ['dashboard', 'analytics', 'sequence'].includes(t.id))" :key="tab.id">
+            <div class="nav-item" :class="{'active': activeTab === tab.id}" @click="activeTab = tab.id">
+                <i :class="tab.icon"></i><span x-text="tab.name"></span>
+            </div>
+        </template>
+        <div class="nav-section">Оборудование</div>
+        <template x-for="tab in tabs.filter(t => ['camera', 'mount', 'focuser', 'filters', 'guider', 'rotator'].includes(t.id) && settings.modules?.[t.id] !== false)" :key="tab.id">
+            <div class="nav-item" :class="{'active': activeTab === tab.id}" @click="activeTab = tab.id">
+                <i :class="tab.icon"></i><span x-text="tab.name"></span>
+            </div>
+        </template>
+    </nav>
+    <div class="p-3 border-t border-gray-800/50 space-y-2">
+        <button @click="showSettings = true" class="btn btn-secondary w-full text-sm py-2">
+            <i class="fas fa-cog"></i><span>Настройки</span>
+        </button>
+        <button @click="showHelp = true" class="btn btn-secondary w-full text-sm py-2">
+            <i class="fas fa-question-circle"></i><span>Справка</span>
+        </button>
+    </div>
+</aside>
+<main class="flex-1 flex flex-col overflow-hidden">
+<header class="p-3 border-b border-gray-800/50 bg-gray-900/30">
+    <div class="flex flex-wrap gap-2 items-stretch">
+        <div class="card p-2 header-card flex-shrink-0" style="min-width: 140px;">
+            <div class="section-title flex items-center gap-2 mb-1">
+                <i class="fas fa-plug text-blue-400 text-xs"></i>Подключение
+            </div>
+            <div class="info-row">
+                <span class="status-dot" :class="state.equipment?.nina_connected ? 'status-online' : 'status-offline'"></span>
+                <span class="font-semibold text-sm">NINA</span>
+            </div>
+            <div class="info-row">
+                <span class="status-dot" :class="aiStatus.thinking ? 'status-thinking' : (state.equipment?.ollama_connected ? 'status-online' : 'status-offline')"></span>
+                <span class="font-semibold truncate text-sm max-w-[120px]" x-text="state.equipment?.model || 'AI'" :title="state.equipment?.model"></span>
+            </div>
+        </div>
+        <div class="card env-card p-2 header-card flex-shrink-0" style="min-width: 180px;">
+            <div class="section-title flex items-center gap-2 mb-1">
+                <i class="fas fa-leaf text-green-400 text-xs"></i>Среда
+            </div>
+            <div class="text-xs text-gray-400 mb-1">
+                Тип: <span class="font-semibold"
+                    :class="environment.source === 'weather_station' ? 'text-green-300' : 'text-blue-300'"
+                    x-text="environment.source === 'weather_station' ? 'Метеостанция' : (environment.source === 'focuser_sensor' ? 'Фокусёр' : 'Нет данных')"></span>
+            </div>
+            <div class="info-row" x-show="environment.temperature !== null && environment.temperature !== undefined">
+                <i class="fas fa-temperature-half text-orange-400 w-4"></i>
+                <span class="font-bold text-sm" x-text="(parseFloat(environment.temperature) || 0).toFixed(1) + '°C'"></span>
+            </div>
+            <div class="info-row" x-show="environment.humidity !== null && environment.humidity !== undefined">
+                <i class="fas fa-droplet text-blue-400 w-4"></i>
+                <span class="font-semibold text-sm" x-text="(parseFloat(environment.humidity) || 0).toFixed(0) + '%'"></span>
+            </div>
+            <div class="info-row" x-show="environment.cloud_cover !== null && environment.cloud_cover !== undefined">
+                <i class="fas fa-cloud text-gray-400 w-4"></i>
+                <span class="font-semibold text-sm" x-text="(parseFloat(environment.cloud_cover) || 0).toFixed(0) + '%'"></span>
+            </div>
+            <div class="info-row" x-show="environment.wind_speed !== null && environment.wind_speed !== undefined">
+                <i class="fas fa-wind text-cyan-400 w-4"></i>
+                <span class="font-semibold text-sm" x-text="(parseFloat(environment.wind_speed) || 0).toFixed(1) + ' м/с'"></span>
+            </div>
+            <div class="info-row" x-show="environment.safe !== null && environment.safe !== undefined">
+                <i class="fas fa-shield-halved w-4" :class="environment.safe ? 'text-green-400' : 'text-red-400'"></i>
+                <span class="font-semibold text-sm" :class="environment.safe ? 'text-green-400' : 'text-red-400'" x-text="environment.safe ? 'БЕЗОПАСНО' : 'ОПАСНО'"></span>
+            </div>
+        </div>
+        <div class="card p-2 header-card flex-1 min-w-[300px]" x-show="state.equipment?.nina_connected">
+            <div class="section-title flex items-center gap-2 mb-1">
+                <i class="fas fa-satellite-dish text-green-400 text-xs"></i>Телеметрия
+            </div>
+            <div class="flex flex-wrap gap-1.5">
+                <div class="telemetry-item" x-show="detailedTel.camera">
+                    <span class="telemetry-label">Камера:</span>
+                    <span class="telemetry-value">
+                        <span x-text="detailedTel.camera?.name || ''"></span>
+                        <span class="inline-flex items-center gap-1 ml-2">
+                            <span :class="['text-cyan-400', (Math.abs(parseFloat(detailedTel.camera?.temperature || 0) - parseFloat(detailedTel.camera?.target_temp || 0)) > 0.15) ? 'animate-pulse' : '']"
+                                  x-text="(detailedTel.camera?.temperature !== null && detailedTel.camera?.temperature !== undefined ? parseFloat(detailedTel.camera.temperature).toFixed(1) : '?') + '°C'"></span>
+                            <template x-if="detailedTel.camera?.temperature !== null && detailedTel.camera?.target_temp !== null">
+                                <span>
+                                    <i x-show="Math.abs(parseFloat(detailedTel.camera.temperature) - parseFloat(detailedTel.camera.target_temp)) <= 0.15"
+                                       class="fas fa-check text-green-400 text-xs" title="Цель достигнута (±0.15°C)"></i>
+                                    <i x-show="parseFloat(detailedTel.camera.temperature) - parseFloat(detailedTel.camera.target_temp) > 0.15"
+                                       class="fas fa-arrow-down text-orange-400 text-xs" title="Охлаждается"></i>
+                                    <i x-show="parseFloat(detailedTel.camera.target_temp) - parseFloat(detailedTel.camera.temperature) > 0.15"
+                                       class="fas fa-arrow-up text-yellow-400 text-xs" title="Нагревается"></i>
+                                </span>
+                            </template>
+                            <span class="text-blue-400" x-text="(detailedTel.camera?.target_temp !== null && detailedTel.camera?.target_temp !== undefined ? detailedTel.camera.target_temp : '?') + '°C'"></span>
+                        </span>
+                        <span class="text-gray-500 mx-1">|</span>
+                        <span class="text-orange-400">G-<span x-text="detailedTel.camera?.gain || '-'"></span></span>
+                        <span class="text-gray-500 mx-1">|</span>
+                        <span class="text-yellow-400">O-<span x-text="detailedTel.camera?.offset || '-'"></span></span>
+                    </span>
+                </div>
+                <div class="telemetry-item" x-show="detailedTel.mount">
+                    <span class="telemetry-label">Монтировка:</span>
+                    <span class="telemetry-value inline-flex items-center gap-1">
+                        <span x-text="detailedTel.mount?.name || ''"></span>
+                        <span class="inline-flex items-center gap-1 ml-1">
+                            <template x-if="detailedTel.mount?.parked">
+                                <span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse inline-block" title="Запаркована"></span>
+                            </template>
+                            <template x-if="!detailedTel.mount?.parked">
+                                <span class="inline-flex items-center gap-1">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-green-500 inline-block" title="Распаркована"></span>
+                                    <span class="text-gray-500">|</span>
+                                    <i x-show="detailedTel.mount?.slewing" class="fas fa-forward text-yellow-400 text-xs animate-pulse" title="Slewing"></i>
+                                    <i x-show="!detailedTel.mount?.slewing && detailedTel.mount?.tracking && detailedTel.mount?.tracking_mode === 'Sidereal'" class="fas fa-star text-yellow-300 text-xs" title="Sidereal"></i>
+                                    <i x-show="!detailedTel.mount?.slewing && detailedTel.mount?.tracking && detailedTel.mount?.tracking_mode === 'Lunar'" class="fas fa-moon text-gray-300 text-xs" title="Lunar"></i>
+                                    <i x-show="!detailedTel.mount?.slewing && detailedTel.mount?.tracking && detailedTel.mount?.tracking_mode === 'Solar'" class="fas fa-sun text-orange-300 text-xs" title="Solar"></i>
+                                    <i x-show="!detailedTel.mount?.slewing && detailedTel.mount?.tracking && detailedTel.mount?.tracking_mode === 'King'" class="fas fa-crown text-purple-300 text-xs" title="King"></i>
+                                    <i x-show="!detailedTel.mount?.slewing && !detailedTel.mount?.tracking" class="fas fa-pause text-gray-400 text-xs" title="Остановлена"></i>
+                                </span>
+                            </template>
+                        </span>
+                    </span>
+                </div>
+                <div class="telemetry-item" x-show="detailedTel.filters?.selected_filter">
+                    <span class="telemetry-label">Фильтр:</span>
+                    <span class="telemetry-value text-purple-300" x-text="typeof detailedTel.filters?.selected_filter === 'object' ? detailedTel.filters.selected_filter.Name : detailedTel.filters?.selected_filter"></span>
+                </div>
+                <div class="telemetry-item" x-show="detailedTel.focuser">
+                    <span class="telemetry-label">Фокус:</span>
+                    <span class="telemetry-value" x-text="'Pos ' + (detailedTel.focuser?.position || '?')"></span>
+                </div>
+                <div class="telemetry-item" x-show="guiderDetails.is_guiding">
+                    <span class="telemetry-label">Гид:</span>
+                    <span class="telemetry-value text-green-400" x-text="guiderDetails.rms_total ? 'RMS ' + parseFloat(guiderDetails.rms_total).toFixed(2) + (guiderUnit === 'arcsec' ? '&quot;' : 'px') : 'Активен'"></span>
+                </div>
+            </div>
+        </div>
+        <div class="card p-3 header-card flex-1 min-w-[300px]" x-show="!state.equipment?.nina_connected">
+            <div class="text-center text-gray-500 py-2">
+                <i class="fas fa-plug-circle-xmark text-2xl mb-2 text-red-400"></i>
+                <p class="text-red-400 font-semibold">Оборудование не подключено</p>
+            </div>
+        </div>
+    </div>
+    <div class="flex gap-2 mt-2 flex-wrap">
+        <button @click="executeCommand('connect_all')" class="btn btn-success flex-1"><i class="fas fa-plug"></i>Подключить всё</button>
+        <button @click="executeCommand('disconnect_all')" class="btn btn-secondary flex-1"><i class="fas fa-power-off"></i>Отключить всё</button>
+        <button @click="executeCommand('emergency_stop')" class="btn btn-danger flex-1"><i class="fas fa-exclamation-triangle"></i>АВАРИЙНЫЙ СТОП</button>
+    </div>
+</header>
+
+<div class="flex-1 flex overflow-hidden">
+<div class="central-panel overflow-y-auto p-4">
+
+<!-- ============ DASHBOARD ============ -->
+<div x-show="activeTab === 'dashboard'" class="space-y-4">
+    <h2 class="text-xl font-bold flex items-center gap-2"><i class="fas fa-home text-blue-400"></i>Dashboard</h2>
+    <div class="card">
+        <div class="card-header"><div class="card-title"><i class="fas fa-bolt text-yellow-400"></i>Быстрые команды</div></div>
+        <div class="card-body">
+            <div class="quick-group-title"><i class="fas fa-camera text-blue-400"></i>Камера</div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <button @click="quickCapture()" class="btn btn-success w-full py-2"><i class="fas fa-camera"></i>Снять кадр</button>
+                <button @click="executeCommand('abort_capture')" class="btn btn-danger w-full py-2"><i class="fas fa-stop"></i>Прервать</button>
+                <button @click="executeCommand('cool', {temperature: -15})" class="btn btn-secondary w-full py-2"><i class="fas fa-snowflake"></i>Охладить</button>
+                <button @click="executeCommand('warm_up')" class="btn btn-secondary w-full py-2"><i class="fas fa-sun"></i>Нагреть</button>
+            </div>
+            <div class="quick-group-title"><i class="fas fa-satellite-dish text-green-400"></i>Монтировка</div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <button @click="executeCommand('park')" class="btn btn-secondary w-full py-2"><i class="fas fa-parking"></i>Парковка</button>
+                <button @click="executeCommand('unpark')" class="btn btn-secondary w-full py-2"><i class="fas fa-lock-open"></i>Распарковка</button>
+                <button @click="executeCommand('stop_slew')" class="btn btn-danger w-full py-2"><i class="fas fa-stop"></i>Стоп</button>
+                <button @click="executeCommand('home_mount')" class="btn btn-secondary w-full py-2"><i class="fas fa-home"></i>Домой</button>
+            </div>
+            <div class="quick-group-title"><i class="fas fa-crosshairs text-orange-400"></i>Фокусёр</div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <button @click="executeCommand('autofocus')" class="btn btn-primary w-full py-2 col-span-2"><i class="fas fa-magic"></i>Автофокус</button>
+            </div>
+            <div class="quick-group-title"><i class="fas fa-bullseye text-red-400"></i>Автогид</div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <button @click="executeCommand('start_guide')" class="btn btn-success w-full py-2"><i class="fas fa-play"></i>Запустить</button>
+                <button @click="executeCommand('stop_guide')" class="btn btn-danger w-full py-2"><i class="fas fa-stop"></i>Стоп</button>
+                <button @click="executeCommand('dither_on')" class="btn btn-secondary w-full py-2"><i class="fas fa-random"></i>Дизеринг</button>
+                <button @click="executeCommand('calibrate_guide')" class="btn btn-secondary w-full py-2"><i class="fas fa-sync"></i>Калибр.</button>
+            </div>
+            <div class="quick-group-title"><i class="fas fa-list-check text-green-400"></i>Последовательность</div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <button @click="executeCommand('start_seq')" class="btn btn-success w-full py-2"><i class="fas fa-play"></i>Старт</button>
+                <button @click="executeCommand('stop_seq')" class="btn btn-danger w-full py-2"><i class="fas fa-stop"></i>Стоп</button>
+                <button @click="executeCommand('advance_seq')" class="btn btn-secondary w-full py-2"><i class="fas fa-forward"></i>Пропустить</button>
+                <button @click="executeCommand('reset_seq')" class="btn btn-secondary w-full py-2"><i class="fas fa-redo"></i>Сброс</button>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header"><div class="card-title"><i class="fas fa-tachometer-alt text-cyan-400"></i>Детальная телеметрия</div></div>
+        <div class="card-body">
+            <div x-show="!state.equipment?.nina_connected" class="disconnected-overlay">
+                <i class="fas fa-plug-circle-xmark"></i>
+                <p class="text-lg font-semibold mb-2">Оборудование не подключено</p>
+                <p class="text-sm">Подключите оборудование через NINA</p>
+            </div>
+            <div class="telemetry-grid" x-show="state.equipment?.nina_connected">
+                <template x-if="settings.modules?.camera !== false && detailedTel.camera">
+                    <div class="telemetry-card">
+                        <div class="telemetry-card-header">
+                            <div class="telemetry-card-icon bg-blue-900/50 text-blue-400"><i class="fas fa-camera"></i></div>
+                            <div>
+                                <div class="font-semibold" x-text="detailedTel.camera?.name || 'Камера'"></div>
+                                <div class="text-xs" :class="detailedTel.camera?.connected ? 'text-green-400' : 'text-red-400'" x-text="detailedTel.camera?.connected ? 'Подключена' : 'Отключена'"></div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 mb-2">
+                            <div class="gauge-container">
+                                <div class="gauge-value text-cyan-400 text-lg" x-text="detailedTel.camera?.temperature !== null ? parseFloat(detailedTel.camera.temperature).toFixed(1) : '-'"></div>
+                                <div class="gauge-label">°C</div>
+                            </div>
+                            <div class="gauge-container">
+                                <div class="gauge-value text-blue-400 text-lg" x-text="detailedTel.camera?.target_temp || '-'"></div>
+                                <div class="gauge-label">Цель °C</div>
+                            </div>
+                        </div>
+                        <div class="text-xs space-y-1 flex-1">
+                            <div class="flex justify-between"><span class="text-gray-400">Охлаждение:</span><span x-text="detailedTel.camera?.cooler_on ? 'ВКЛ' : 'ВЫКЛ'" :class="detailedTel.camera?.cooler_on ? 'text-green-400' : 'text-gray-400'"></span></div>
+                            <div class="flex justify-between"><span class="text-gray-400">Мощность:</span><span x-text="(() => { const v = parseFloat(detailedTel.camera?.cooler_power); return isNaN(v) ? '-' : Math.round(v * 100) + '%'; })()"></span></div>
+                            <div class="flex justify-between"><span class="text-gray-400">Экспозиция:</span><span x-text="detailedTel.camera?.is_exposing ? 'ИДЁТ' : 'Нет'" :class="detailedTel.camera?.is_exposing ? 'text-yellow-400' : ''"></span></div>
+                            <div class="flex justify-between"><span class="text-gray-400">Gain:</span><span x-text="detailedTel.camera?.gain || '-'"></span></div>
+                            <div class="flex justify-between"><span class="text-gray-400">Offset:</span><span class="text-orange-400" x-text="detailedTel.camera?.offset || '-'"></span></div>
+                            <div class="flex justify-between"><span class="text-gray-400">Binning:</span><span x-text="(detailedTel.camera?.binning_x || 1) + 'x' + (detailedTel.camera?.binning_y || 1)"></span></div>
+                        </div>
+                    </div>
+                </template>
+                <template x-if="settings.modules?.mount !== false && detailedTel.mount">
+                    <div class="telemetry-card">
+                        <div class="telemetry-card-header">
+                            <div class="telemetry-card-icon bg-green-900/50 text-green-400"><i class="fas fa-satellite-dish"></i></div>
+                            <div>
+                                <div class="font-semibold" x-text="detailedTel.mount?.name || 'Монтировка'"></div>
+                                <div class="text-xs" :class="detailedTel.mount?.connected ? 'text-green-400' : 'text-red-400'" x-text="detailedTel.mount?.connected ? 'Подключена' : 'Отключена'"></div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 mb-2">
+                            <div class="gauge-container">
+                                <div class="gauge-value text-blue-400 text-lg" x-text="detailedTel.mount?.right_ascension !== null ? parseFloat(detailedTel.mount.right_ascension).toFixed(3) : '-'"></div>
+                                <div class="gauge-label">RA (h)</div>
+                            </div>
+                            <div class="gauge-container">
+                                <div class="gauge-value text-red-400 text-lg" x-text="detailedTel.mount?.declination !== null ? parseFloat(detailedTel.mount.declination).toFixed(2) : '-'"></div>
+                                <div class="gauge-label">Dec (°)</div>
+                            </div>
+                        </div>
+                        <div class="text-xs space-y-1 flex-1">
+                            <div class="flex justify-between"><span class="text-gray-400">Ведение:</span><span x-text="detailedTel.mount?.tracking ? 'ВКЛ' : 'ВЫКЛ'" :class="detailedTel.mount?.tracking ? 'text-green-400' : 'text-gray-400'"></span></div>
+                            <div class="flex justify-between"><span class="text-gray-400">Скорость:</span><span class="text-yellow-400" x-text="detailedTel.mount?.tracking_mode || '—'"></span></div>
+                            <div class="flex justify-between"><span class="text-gray-400">Движение:</span><span x-text="detailedTel.mount?.slewing ? 'SLEWING' : 'Нет'" :class="detailedTel.mount?.slewing ? 'text-yellow-400' : ''"></span></div>
+                            <div class="flex justify-between"><span class="text-gray-400">Парковка:</span><span x-text="detailedTel.mount?.parked ? 'ДА' : 'Нет'"></span></div>
+                            <div class="flex justify-between"><span class="text-gray-400">Pier Side:</span><span x-text="detailedTel.mount?.pier_side || '-'"></span></div>
+                        </div>
+                    </div>
+                </template>
+                <template x-if="settings.modules?.focuser !== false && detailedTel.focuser">
+                    <div class="telemetry-card">
+                        <div class="telemetry-card-header">
+                            <div class="telemetry-card-icon bg-orange-900/50 text-orange-400"><i class="fas fa-crosshairs"></i></div>
+                            <div>
+                                <div class="font-semibold" x-text="detailedTel.focuser?.name || 'Фокусёр'"></div>
+                                <div class="text-xs" :class="detailedTel.focuser?.connected ? 'text-green-400' : 'text-red-400'" x-text="detailedTel.focuser?.connected ? 'Подключен' : 'Отключен'"></div>
+                            </div>
+                            <div class="focuser-status-icon">
+                                <i x-show="detailedTel.focuser?.moving" class="fas fa-forward text-yellow-400 text-2xl animate-pulse" title="Движение"></i>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 mb-2">
+                            <div class="gauge-container">
+                                <div class="gauge-value text-orange-400 text-lg" x-text="detailedTel.focuser?.position || '-'"></div>
+                                <div class="gauge-label">steps</div>
+                            </div>
+                            <div class="gauge-container">
+                                <div class="gauge-value text-xl" :class="detailedTel.focuser?.moving ? 'text-yellow-400' : 'text-green-400'">
+                                    <i x-show="detailedTel.focuser?.moving" class="fas fa-forward animate-pulse"></i>
+                                    <i x-show="!detailedTel.focuser?.moving" class="fas fa-play"></i>
+                                </div>
+                                <div class="gauge-label" x-text="detailedTel.focuser?.moving ? 'Движение' : 'Стабильно'"></div>
+                            </div>
+                        </div>
+                        <div class="text-xs space-y-1 flex-1" x-show="detailedTel.focuser?.temperature !== null">
+                            <div class="flex justify-between"><span class="text-gray-400">Температура:</span><span class="text-orange-300" x-text="parseFloat(detailedTel.focuser?.temperature || 0).toFixed(1) + '°C'"></span></div>
+                        </div>
+                    </div>
+                </template>
+                <template x-if="settings.modules?.filters !== false && detailedTel.filters">
+                    <div class="telemetry-card">
+                        <div class="telemetry-card-header">
+                            <div class="telemetry-card-icon bg-purple-900/50 text-purple-400"><i class="fas fa-filter"></i></div>
+                            <div>
+                                <div class="font-semibold" x-text="detailedTel.filters?.name || 'Колесо фильтров'"></div>
+                                <div class="text-xs" :class="detailedTel.filters?.connected ? 'text-green-400' : 'text-red-400'" x-text="detailedTel.filters?.connected ? 'Подключено' : 'Отключено'"></div>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="section-title mb-2">Текущий фильтр</div>
+                            <template x-if="detailedTel.filters?.selected_filter">
+                                <div class="filter-badge">
+                                    <i class="fas fa-circle text-purple-400 text-xs"></i>
+                                    <span x-text="typeof detailedTel.filters.selected_filter === 'object' ? detailedTel.filters.selected_filter.Name : detailedTel.filters.selected_filter"></span>
+                                </div>
+                            </template>
+                            <div x-show="!detailedTel.filters?.selected_filter" class="text-gray-500 text-sm">Не выбран</div>
+                        </div>
+                        <div class="flex-1 overflow-y-auto" style="max-height: 120px;">
+                            <template x-for="(f, idx) in (detailedTel.filters?.available_filters || [])" :key="idx">
+                                <div class="filter-list-item" :class="(typeof detailedTel.filters?.selected_filter === 'object' && detailedTel.filters?.selected_filter?.Id === f.Id) ? 'active' : ''">
+                                    <span x-text="f.Name || ('Filter #' + f.Id)"></span>
+                                    <span class="text-xs text-gray-400" x-text="'#' + f.Id"></span>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </template>
+                <template x-if="settings.modules?.guider !== false && detailedTel.guider">
+                    <div class="telemetry-card">
+                        <div class="telemetry-card-header">
+                            <div class="telemetry-card-icon bg-red-900/50 text-red-400"><i class="fas fa-bullseye"></i></div>
+                            <div>
+                                <div class="font-semibold">Автогид</div>
+                                <div class="text-xs" :class="detailedTel.guider?.is_guiding ? 'text-green-400' : 'text-red-400'" x-text="detailedTel.guider?.is_guiding ? 'Активен' : 'Остановлен'"></div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2 mb-2">
+                            <div class="gauge-container">
+                                <div class="gauge-value" :class="getRmsColor(detailedTel.guider?.rms_total)" x-text="detailedTel.guider?.rms_total ? parseFloat(detailedTel.guider.rms_total).toFixed(2) : '-'"></div>
+                                <div class="gauge-unit" x-text="detailedTel.guider?.unit === 'pixels' ? 'px' : '&quot;'"></div>
+                                <div class="gauge-label">RMS Total</div>
+                            </div>
+                            <div class="gauge-container">
+                                <div class="gauge-value text-yellow-400" x-text="detailedTel.guider?.pixel_scale ? parseFloat(detailedTel.guider.pixel_scale).toFixed(2) : '-'"></div>
+                                <div class="gauge-unit">&quot;/px</div>
+                                <div class="gauge-label">Pixel Scale</div>
+                            </div>
+                        </div>
+                        <div class="text-xs space-y-1 flex-1">
+                            <div class="flex justify-between"><span class="text-gray-400">RMS RA:</span><span class="text-blue-400" x-text="detailedTel.guider?.rms_ra ? parseFloat(detailedTel.guider.rms_ra).toFixed(2) + (detailedTel.guider?.unit === 'pixels' ? 'px' : '&quot;') : '-'"></span></div>
+                            <div class="flex justify-between"><span class="text-gray-400">RMS Dec:</span><span class="text-red-400" x-text="detailedTel.guider?.rms_dec ? parseFloat(detailedTel.guider.rms_dec).toFixed(2) + (detailedTel.guider?.unit === 'pixels' ? 'px' : '&quot;') : '-'"></span></div>
+                        </div>
+                    </div>
+                </template>
+                <template x-if="settings.modules?.rotator !== false && detailedTel.rotator">
+                    <div class="telemetry-card">
+                        <div class="telemetry-card-header">
+                            <div class="telemetry-card-icon bg-cyan-900/50 text-cyan-400"><i class="fas fa-sync-alt"></i></div>
+                            <div>
+                                <div class="font-semibold" x-text="detailedTel.rotator?.name || 'Ротатор'"></div>
+                                <div class="text-xs text-green-400">Подключен</div>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-2">
+                            <div class="gauge-container">
+                                <div class="gauge-value text-cyan-400 text-lg" x-text="detailedTel.rotator?.position !== null ? parseFloat(detailedTel.rotator.position).toFixed(1) : '-'"></div>
+                                <div class="gauge-label">°</div>
+                            </div>
+                            <div class="gauge-container">
+                                <div class="gauge-value text-xl" :class="detailedTel.rotator?.moving ? 'text-yellow-400' : 'text-green-400'">
+                                    <i x-show="detailedTel.rotator?.moving" class="fas fa-forward animate-pulse"></i>
+                                    <i x-show="!detailedTel.rotator?.moving" class="fas fa-play"></i>
+                                </div>
+                                <div class="gauge-label" x-text="detailedTel.rotator?.moving ? 'Движение' : 'Стабильно'"></div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============ АНАЛИТИКА СЕССИИ (объединённая вкладка) ============ -->
+<div x-show="activeTab === 'analytics'" class="space-y-4">
+    <div class="flex items-center justify-between flex-wrap gap-2">
+        <h2 class="text-xl font-bold flex items-center gap-2"><i class="fas fa-chart-pie text-indigo-400"></i>Аналитика сессии</h2>
+        <button @click="refreshAllAnalytics()" class="btn btn-secondary text-xs py-1 px-3">
+            <i class="fas fa-sync-alt"></i>Обновить всё
+        </button>
+    </div>
+    <!-- ВНУТРЕННИЕ ТАБЫ -->
+    <div class="flex gap-2 flex-wrap">
+        <div class="inner-tab" :class="{'active': analyticsSubTab === 'prometheus'}" @click="analyticsSubTab = 'prometheus'">
+            <i class="fas fa-chart-line"></i>Prometheus Метрики
+        </div>
+        <div class="inner-tab" :class="{'active': analyticsSubTab === 'session'}" @click="analyticsSubTab = 'session'">
+            <i class="fas fa-database"></i>Метаданные сессии
+        </div>
+        <div class="inner-tab" :class="{'active': analyticsSubTab === 'profile'}" @click="analyticsSubTab = 'profile'">
+            <i class="fas fa-id-card"></i>Профиль NINA
+        </div>
+    </div>
+
+    <!-- ==================== PROMETHEUS SUB-TAB ==================== -->
+    <div x-show="analyticsSubTab === 'prometheus'" class="space-y-4">
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-external-link-alt text-cyan-400"></i>Ссылки на Prometheus</div>
+            </div>
+            <div class="card-body">
+                <div class="flex gap-2 flex-wrap">
+                    <a href="/api/metrics" target="_blank" class="btn btn-primary">
+                        <i class="fas fa-code"></i>Эндпоинт /api/metrics (text format)
+                    </a>
+                    <button @click="refreshMetrics(); refreshMetricsHistory()" class="btn btn-secondary">
+                        <i class="fas fa-sync-alt"></i>Обновить метрики
+                    </button>
+                </div>
+                <div class="text-xs text-gray-500 mt-2">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Prometheus собирает метрики автоматически каждые <span x-text="settings.prometheus?.scrape_interval_seconds || 5"></span> сек.
+                    Для подключения внешнего Prometheus используйте URL: <code class="bg-gray-800 px-2 py-0.5 rounded">http://&lt;ваш-ip&gt;:8000/api/metrics</code>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-chart-area text-green-400"></i>История (тренды)</div>
+                <select x-model="metricsHistoryMinutes" @change="refreshMetricsHistory()" class="text-sm py-1 px-2 bg-gray-800 rounded">
+                    <option value="15">15 мин</option>
+                    <option value="30">30 мин</option>
+                    <option value="60">1 час</option>
+                    <option value="180">3 часа</option>
+                </select>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="height: 300px;"><canvas id="metricsChart"></canvas></div>
+                <div class="flex gap-2 mt-3 flex-wrap">
+                    <template x-for="k in metricChartKeys" :key="k">
+                        <button @click="toggleMetricOnChart(k)"
+                                class="text-xs px-2 py-1 rounded"
+                                :class="selectedMetrics.includes(k) ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-400'"
+                                x-text="k.replace('nina_', '').replace(/_/g, ' ')"></button>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        <!-- КАТЕГОРИИ МЕТРИК -->
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-gauge-high text-cyan-400"></i>Текущие значения по категориям</div>
+                <div class="text-xs text-gray-500" x-text="'Обновлено: ' + (metricsSnapshotTime || '—')"></div>
+            </div>
+            <div class="card-body">
+                <div x-show="!metricsSnapshot || Object.keys(metricsSnapshot).length === 0" class="text-center text-gray-500 py-8">
+                    <i class="fas fa-chart-bar text-4xl mb-3 opacity-30"></i>
+                    <p>Метрики ещё не собраны</p>
+                </div>
+
+                <!-- КАМЕРА -->
+                <div class="prometheus-category" x-show="metricsSnapshot.nina_camera_temperature_celsius !== undefined">
+                    <div class="prometheus-category-title">
+                        <i class="fas fa-camera text-blue-400"></i>Камера
+                    </div>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        <div class="prometheus-metric" x-show="metricsSnapshot.nina_camera_temperature_celsius !== undefined">
+                            <span class="prometheus-metric-name">Температура сенсора</span>
+                            <span class="prometheus-metric-value text-cyan-400" x-text="formatMetricValue('nina_camera_temperature_celsius', metricsSnapshot.nina_camera_temperature_celsius)"></span>
+                        </div>
+                        <div class="prometheus-metric" x-show="metricsSnapshot.nina_camera_target_temperature_celsius !== undefined">
+                            <span class="prometheus-metric-name">Цель охлаждения</span>
+                            <span class="prometheus-metric-value text-blue-400" x-text="formatMetricValue('nina_camera_target_temperature_celsius', metricsSnapshot.nina_camera_target_temperature_celsius)"></span>
+                        </div>
+                        <div class="prometheus-metric" x-show="metricsSnapshot.nina_camera_cooler_power_percent !== undefined">
+                            <span class="prometheus-metric-name">Мощность кулера</span>
+                            <span class="prometheus-metric-value" x-text="(metricsSnapshot.nina_camera_cooler_power_percent || 0).toFixed(0) + '%'"></span>
+                        </div>
+                        <div class="prometheus-metric" x-show="metricsSnapshot.nina_camera_is_exposing !== undefined">
+                            <span class="prometheus-metric-name">Экспозиция</span>
+                            <span class="prometheus-metric-value" :class="metricsSnapshot.nina_camera_is_exposing ? 'text-yellow-400' : 'text-gray-400'" x-text="metricsSnapshot.nina_camera_is_exposing ? 'ИДЁТ' : 'Нет'"></span>
+                        </div>
+                        <div class="prometheus-metric" x-show="metricsSnapshot.nina_camera_gain !== undefined">
+                            <span class="prometheus-metric-name">Gain</span>
+                            <span class="prometheus-metric-value" x-text="metricsSnapshot.nina_camera_gain"></span>
+                        </div>
+                        <div class="prometheus-metric" x-show="metricsSnapshot.nina_camera_offset !== undefined">
+                            <span class="prometheus-metric-name">Offset</span>
+                            <span class="prometheus-metric-value" x-text="metricsSnapshot.nina_camera_offset"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- МОНТИРОВКА -->
+                <div class="prometheus-category" x-show="metricsSnapshot.nina_mount_ra_hours !== undefined">
+                    <div class="prometheus-category-title">
+                        <i class="fas fa-satellite-dish text-green-400"></i>Монтировка
+                    </div>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        <div class="prometheus-metric" x-show="metricsSnapshot.nina_mount_ra_hours !== undefined">
+                            <span class="prometheus-metric-name">RA (часы)</span>
+                            <span class="prometheus-metric-value text-blue-400" x-text="formatMetricValue('nina_mount_ra_hours', metricsSnapshot.nina_mount_ra_hours)"></span>
+                        </div>
+                        <div class="prometheus-metric" x-show="metricsSnapshot.nina_mount_dec_degrees !== undefined">
+                            <span class="prometheus-metric-name">Dec (градусы)</span>
+                            <span class="prometheus-metric-value text-red-400" x-text="formatMetricValue('nina_mount_dec_degrees', metricsSnapshot.nina_mount_dec_degrees)"></span>
+                        </div>
+                        <div class="prometheus-metric" x-show="metricsSnapshot.nina_mount_tracking !== undefined">
+                            <span class="prometheus-metric-name">Ведение</span>
+                            <span class="prometheus-metric-value" :class="metricsSnapshot.nina_mount_tracking ? 'text-green-400' : 'text-gray-400'" x-text="metricsSnapshot.nina_mount_tracking ? 'ВКЛ' : 'ВЫКЛ'"></span>
+                        </div>
+                        <div class="prometheus-metric" x-show="metricsSnapshot.nina_mount_slewing !== undefined">
+                            <span class="prometheus-metric-name">Движение (Slew)</span>
+                            <span class="prometheus-metric-value" :class="metricsSnapshot.nina_mount_slewing ? 'text-yellow-400' : 'text-gray-400'" x-text="metricsSnapshot.nina_mount_slewing ? 'ДА' : 'Нет'"></span>
+                        </div>
+                        <div class="prometheus-metric" x-show="metricsSnapshot.nina_mount_parked !== undefined">
+                            <span class="prometheus-metric-name">Запаркована</span>
+                            <span class="prometheus-metric-value" :class="metricsSnapshot.nina_mount_parked ? 'text-red-400' : 'text-green-400'" x-text="metricsSnapshot.nina_mount_parked ? 'ДА' : 'Нет'"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- АВТОГИД -->
+                <div class="prometheus-category" x-show="metricsSnapshot.nina_guider_is_guiding !== undefined">
+                    <div class="prometheus-category-title">
+                        <i class="fas fa-bullseye text-red-400"></i>Автогид
+                    </div>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                        <div class="prometheus-metric">
+                            <span class="prometheus-metric-name">Активен</span>
+                            <span class="prometheus-metric-value" :class="metricsSnapshot.nina_guider_is_guiding ? 'text-green-400' : 'text-gray-400'" x-text="metricsSnapshot.nina_guider_is_guiding ? 'ДА' : 'Нет'"></span>
+                        </div>
+                        <div class="prometheus-metric" x-show="metricsSnapshot.nina_guider_rms_total_arcsec !== undefined">
+                            <span class="prometheus-metric-name">RMS Total</span>
+                            <span class="prometheus-metric-value" :class="getRmsColor(metricsSnapshot.nina_guider_rms_total_arcsec)" x-text="(metricsSnapshot.nina_guider_rms_total_arcsec || 0).toFixed(2) + '&quot;'"></span>
+                        </div>
+                        <div class="prometheus-metric" x-show="metricsSnapshot.nina_guider_rms_ra_arcsec !== undefined">
+                            <span class="prometheus-metric-name">RMS RA</span>
+                            <span class="prometheus-metric-value text-blue-400" x-text="(metricsSnapshot.nina_guider_rms_ra_arcsec || 0).toFixed(2) + '&quot;'"></span>
+                        </div>
+                        <div class="prometheus-metric" x-show="metricsSnapshot.nina_guider_rms_dec_arcsec !== undefined">
+                            <span class="prometheus-metric-name">RMS Dec</span>
+                            <span class="prometheus-metric-value text-red-400" x-text="(metricsSnapshot.nina_guider_rms_dec_arcsec || 0).toFixed(2) + '&quot;'"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ФОКУСЁР -->
+                <div class="prometheus-category" x-show="metricsSnapshot.nina_focuser_position_steps !== undefined">
+                    <div class="prometheus-category-title">
+                        <i class="fas fa-crosshairs text-orange-400"></i>Фокусёр
+                    </div>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        <div class="prometheus-metric" x-show="metricsSnapshot.nina_focuser_position_steps !== undefined">
+                            <span class="prometheus-metric-name">Позиция (steps)</span>
+                            <span class="prometheus-metric-value text-orange-400" x-text="Math.round(metricsSnapshot.nina_focuser_position_steps)"></span>
+                        </div>
+                        <div class="prometheus-metric" x-show="metricsSnapshot.nina_focuser_temperature_celsius !== undefined">
+                            <span class="prometheus-metric-name">Температура</span>
+                            <span class="prometheus-metric-value" x-text="formatMetricValue('nina_focuser_temperature_celsius', metricsSnapshot.nina_focuser_temperature_celsius)"></span>
+                        </div>
+                        <div class="prometheus-metric" x-show="metricsSnapshot.nina_focuser_moving !== undefined">
+                            <span class="prometheus-metric-name">Движение</span>
+                            <span class="prometheus-metric-value" :class="metricsSnapshot.nina_focuser_moving ? 'text-yellow-400' : 'text-gray-400'" x-text="metricsSnapshot.nina_focuser_moving ? 'ДА' : 'Нет'"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ИЗОБРАЖЕНИЯ -->
+                <div class="prometheus-category" x-show="metricsSnapshot.nina_image_hfr_pixels !== undefined">
+                    <div class="prometheus-category-title">
+                        <i class="fas fa-image text-yellow-400"></i>Последнее изображение
+                    </div>
+                    <div class="grid grid-cols-2 md:grid-cols-5 gap-2">
+                        <div class="prometheus-metric" x-show="metricsSnapshot.nina_image_hfr_pixels !== undefined">
+                            <span class="prometheus-metric-name">HFR (px)</span>
+                            <span class="prometheus-metric-value text-yellow-400" x-text="(metricsSnapshot.nina_image_hfr_pixels || 0).toFixed(2)"></span>
+                        </div>
+                        <div class="prometheus-metric" x-show="metricsSnapshot.nina_image_fwhm_pixels !== undefined">
+                            <span class="prometheus-metric-name">FWHM (px)</span>
+                            <span class="prometheus-metric-value text-purple-400" x-text="(metricsSnapshot.nina_image_fwhm_pixels || 0).toFixed(2)"></span>
+                        </div>
+                        <div class="prometheus-metric" x-show="metricsSnapshot.nina_image_stars_count !== undefined">
+                            <span class="prometheus-metric-name">Звёзд</span>
+                            <span class="prometheus-metric-value text-cyan-400" x-text="Math.round(metricsSnapshot.nina_image_stars_count)"></span>
+                        </div>
+                        <div class="prometheus-metric" x-show="metricsSnapshot.nina_image_mean_brightness !== undefined">
+                            <span class="prometheus-metric-name">Mean яркость</span>
+                            <span class="prometheus-metric-value" x-text="(metricsSnapshot.nina_image_mean_brightness || 0).toFixed(2)"></span>
+                        </div>
+                        <div class="prometheus-metric" x-show="metricsSnapshot.nina_image_exposure_seconds !== undefined">
+                            <span class="prometheus-metric-name">Выдержка (с)</span>
+                            <span class="prometheus-metric-value" x-text="(metricsSnapshot.nina_image_exposure_seconds || 0).toFixed(1)"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ОКРУЖЕНИЕ -->
+                <div class="prometheus-category" x-show="metricsSnapshot.nina_environment_temperature_celsius !== undefined">
+                    <div class="prometheus-category-title">
+                        <i class="fas fa-leaf text-green-400"></i>Окружающая среда
+                    </div>
+                    <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                        <div class="prometheus-metric" x-show="metricsSnapshot.nina_environment_temperature_celsius !== undefined">
+                            <span class="prometheus-metric-name">Температура</span>
+                            <span class="prometheus-metric-value" x-text="formatMetricValue('nina_environment_temperature_celsius', metricsSnapshot.nina_environment_temperature_celsius)"></span>
+                        </div>
+                        <div class="prometheus-metric" x-show="metricsSnapshot.nina_environment_humidity_percent !== undefined">
+                            <span class="prometheus-metric-name">Влажность</span>
+                            <span class="prometheus-metric-value" x-text="formatMetricValue('nina_environment_humidity_percent', metricsSnapshot.nina_environment_humidity_percent)"></span>
+                        </div>
+                        <div class="prometheus-metric" x-show="metricsSnapshot.nina_environment_pressure_hpa !== undefined">
+                            <span class="prometheus-metric-name">Давление</span>
+                            <span class="prometheus-metric-value" x-text="formatMetricValue('nina_environment_pressure_hpa', metricsSnapshot.nina_environment_pressure_hpa)"></span>
+                        </div>
+                        <div class="prometheus-metric" x-show="metricsSnapshot.nina_environment_cloud_cover_percent !== undefined">
+                            <span class="prometheus-metric-name">Облачность</span>
+                            <span class="prometheus-metric-value" x-text="formatMetricValue('nina_environment_cloud_cover_percent', metricsSnapshot.nina_environment_cloud_cover_percent)"></span>
+                        </div>
+                        <div class="prometheus-metric" x-show="metricsSnapshot.nina_environment_wind_speed_ms !== undefined">
+                            <span class="prometheus-metric-name">Ветер (м/с)</span>
+                            <span class="prometheus-metric-value" x-text="(metricsSnapshot.nina_environment_wind_speed_ms || 0).toFixed(1)"></span>
+                        </div>
+                        <div class="prometheus-metric" x-show="metricsSnapshot.nina_environment_safe !== undefined">
+                            <span class="prometheus-metric-name">Безопасно</span>
+                            <span class="prometheus-metric-value" :class="metricsSnapshot.nina_environment_safe ? 'text-green-400' : 'text-red-400'" x-text="metricsSnapshot.nina_environment_safe ? 'ДА' : 'НЕТ'"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- СЕССИЯ -->
+                <div class="prometheus-category" x-show="metricsSnapshot.nina_session_frames_total !== undefined">
+                    <div class="prometheus-category-title">
+                        <i class="fas fa-clock text-indigo-400"></i>Сессия
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="prometheus-metric" x-show="metricsSnapshot.nina_session_frames_total !== undefined">
+                            <span class="prometheus-metric-name">Всего кадров</span>
+                            <span class="prometheus-metric-value text-blue-400" x-text="Math.round(metricsSnapshot.nina_session_frames_total)"></span>
+                        </div>
+                        <div class="prometheus-metric" x-show="metricsSnapshot.nina_session_exposure_seconds_total !== undefined">
+                            <span class="prometheus-metric-name">Общая выдержка</span>
+                            <span class="prometheus-metric-value text-green-400" x-text="formatDuration(metricsSnapshot.nina_session_exposure_seconds_total)"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- API / AI -->
+                <div class="prometheus-category" x-show="metricsSnapshot.nina_api_requests_total !== undefined || metricsSnapshot.nina_ai_requests_total !== undefined">
+                    <div class="prometheus-category-title">
+                        <i class="fas fa-server text-gray-400"></i>API / AI статистика
+                    </div>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                        <div class="prometheus-metric" x-show="metricsSnapshot.nina_api_requests_total !== undefined">
+                            <span class="prometheus-metric-name">API запросов</span>
+                            <span class="prometheus-metric-value text-blue-400" x-text="Math.round(metricsSnapshot.nina_api_requests_total || 0)"></span>
+                        </div>
+                        <div class="prometheus-metric" x-show="metricsSnapshot.nina_api_errors_total !== undefined">
+                            <span class="prometheus-metric-name">API ошибок</span>
+                            <span class="prometheus-metric-value text-red-400" x-text="Math.round(metricsSnapshot.nina_api_errors_total || 0)"></span>
+                        </div>
+                        <div class="prometheus-metric" x-show="metricsSnapshot.nina_ai_requests_total !== undefined">
+                            <span class="prometheus-metric-name">AI запросов</span>
+                            <span class="prometheus-metric-value text-purple-400" x-text="Math.round(metricsSnapshot.nina_ai_requests_total)"></span>
+                        </div>
+                        <div class="prometheus-metric" x-show="metricsSnapshot.nina_ai_errors_total !== undefined">
+                            <span class="prometheus-metric-name">AI ошибок</span>
+                            <span class="prometheus-metric-value text-red-400" x-text="Math.round(metricsSnapshot.nina_ai_errors_total)"></span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== SESSION METADATA SUB-TAB ==================== -->
+    <div x-show="analyticsSubTab === 'session'" class="space-y-4">
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-database text-indigo-400"></i>Метаданные сессии</div>
+                <button @click="refreshSessionMetadata()" class="btn btn-secondary text-xs py-1 px-3">
+                    <i class="fas fa-sync-alt"></i>Пересканировать
+                </button>
+            </div>
+            <div class="card-body">
+                <div x-show="!sessionMetadata || !sessionMetadata.total_frames" class="text-center text-gray-500 py-8">
+                    <i class="fas fa-folder-open text-4xl mb-3 opacity-30"></i>
+                    <p>Метаданные сессии не найдены</p>
+                    <p class="text-xs mt-1">Убедитесь, что плагин Session Metadata установлен в NINA</p>
+                    <div class="text-xs mt-3 text-gray-600">
+                        Папка: <span x-text="settings?.session_metadata_dir || '—'" class="font-mono"></span>
+                    </div>
+                </div>
+                <template x-if="sessionMetadata && sessionMetadata.total_frames">
+                    <div class="space-y-4">
+                        <div x-show="sessionMetadata.acquisition && Object.keys(sessionMetadata.acquisition).length">
+                            <div class="section-title mb-2">Детали сессии</div>
+                            <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                <template x-for="(val, key) in sessionMetadata.acquisition" :key="key">
+                                    <div class="kv-row">
+                                        <span class="kv-key" x-text="key"></span>
+                                        <span class="kv-val" x-text="val"></span>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="section-title mb-2">Общая статистика</div>
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                <div class="metric-box">
+                                    <div class="metric-label">Всего кадров</div>
+                                    <div class="metric-value text-blue-400" x-text="sessionMetadata.total_frames"></div>
+                                </div>
+                                <div class="metric-box">
+                                    <div class="metric-label">Общая выдержка</div>
+                                    <div class="metric-value text-green-400" x-text="sessionMetadata.total_exposure_formatted"></div>
+                                </div>
+                                <div class="metric-box">
+                                    <div class="metric-label">Средний HFR</div>
+                                    <div class="metric-value text-yellow-400" x-text="sessionMetadata.hfr_stats?.avg || '—'"></div>
+                                </div>
+                                <div class="metric-box">
+                                    <div class="metric-label">Лучший HFR</div>
+                                    <div class="metric-value text-emerald-400" x-text="sessionMetadata.hfr_stats?.min || '—'"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="section-title mb-2">По фильтрам</div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm">
+                                    <thead>
+                                        <tr class="text-left text-gray-500 uppercase text-xs border-b border-gray-700">
+                                            <th class="py-2 px-3">Фильтр</th>
+                                            <th class="py-2 px-3">Кадров</th>
+                                            <th class="py-2 px-3">Выдержка</th>
+                                            <th class="py-2 px-3">HFR (min/avg/max)</th>
+                                            <th class="py-2 px-3">FWHM (min/avg/max)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <template x-for="(data, filter) in sessionMetadata.by_filter" :key="filter">
+                                            <tr class="border-b border-gray-800/30 hover:bg-gray-800/20">
+                                                <td class="py-2 px-3 font-semibold text-purple-300" x-text="filter"></td>
+                                                <td class="py-2 px-3" x-text="data.count"></td>
+                                                <td class="py-2 px-3" x-text="formatDurationShort(data.exposure)"></td>
+                                                <td class="py-2 px-3 text-xs font-mono" x-text="(data.hfr?.min || '—') + ' / ' + (data.hfr?.avg || '—') + ' / ' + (data.hfr?.max || '—')"></td>
+                                                <td class="py-2 px-3 text-xs font-mono" x-text="(data.fwhm?.min || '—') + ' / ' + (data.fwhm?.avg || '—') + ' / ' + (data.fwhm?.max || '—')"></td>
+                                            </tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="section-title mb-2">Последние кадры</div>
+                            <div class="session-frame-row session-frame-header">
+                                <div>№</div><div>Время</div><div>Фильтр</div><div>Выдержка</div><div>HFR</div><div>FWHM</div><div>Звёзд</div>
+                            </div>
+                            <div style="max-height: 400px; overflow-y: auto;">
+                                <template x-for="(frame, idx) in (sessionMetadata.images || []).slice().reverse()" :key="idx">
+                                    <div class="session-frame-row">
+                                        <div class="text-gray-500" x-text="(sessionMetadata.images.length - idx)"></div>
+                                        <div class="text-xs text-gray-400" x-text="formatTimestamp(frame.Timestamp || frame.FileDate)"></div>
+                                        <div class="text-purple-300" x-text="frame.Filter || frame.FilterName || '—'"></div>
+                                        <div x-text="(frame.ExposureTime || 0) + 's'"></div>
+                                        <div class="text-yellow-400" x-text="frame.HFR ? parseFloat(frame.HFR).toFixed(2) : '—'"></div>
+                                        <div class="text-cyan-400" x-text="frame.FWHM ? parseFloat(frame.FWHM).toFixed(2) : '—'"></div>
+                                        <div x-text="frame.StarCount || '—'"></div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== PROFILE SUB-TAB ==================== -->
+    <div x-show="analyticsSubTab === 'profile'" class="space-y-4">
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title"><i class="fas fa-id-card text-indigo-400"></i>Профиль NINA</div>
+                <button @click="reloadProfile()" class="btn btn-primary text-xs py-1 px-3">
+                    <i class="fas fa-sync-alt"></i>Перезагрузить
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="card mb-3" x-show="profile.name">
+                    <div class="card-header"><div class="card-title"><i class="fas fa-user text-indigo-400"></i>Основное</div></div>
+                    <div class="card-body">
+                        <div class="kv-row"><span class="kv-key">Имя:</span><span class="kv-val" x-text="profile.name"></span></div>
+                        <div class="kv-row"><span class="kv-key">ID:</span><span class="kv-val text-xs" x-text="profile.id"></span></div>
+                        <div class="kv-row"><span class="kv-key">Описание:</span><span class="kv-val" x-text="profile.description"></span></div>
+                        <div class="kv-row"><span class="kv-key">Последнее исп.:</span><span class="kv-val" x-text="profile.last_used"></span></div>
+                    </div>
+                </div>
+                <div class="card mb-3" x-show="profile.observatory">
+                    <div class="card-header"><div class="card-title"><i class="fas fa-map-marker-alt text-red-400"></i>Обсерватория</div></div>
+                    <div class="card-body">
+                        <div class="kv-row"><span class="kv-key">Название:</span><span class="kv-val" x-text="profile.observatory?.name"></span></div>
+                        <div class="kv-row"><span class="kv-key">Место:</span><span class="kv-val" x-text="profile.observatory?.site"></span></div>
+                        <div class="kv-row"><span class="kv-key">Наблюдатель:</span><span class="kv-val" x-text="profile.observatory?.observer"></span></div>
+                        <div class="kv-row"><span class="kv-key">Широта:</span><span class="kv-val" x-text="profile.observatory?.latitude"></span></div>
+                        <div class="kv-row"><span class="kv-key">Долгота:</span><span class="kv-val" x-text="profile.observatory?.longitude"></span></div>
+                        <div class="kv-row"><span class="kv-key">Высота:</span><span class="kv-val" x-text="(profile.observatory?.elevation || '-') + ' м'"></span></div>
+                    </div>
+                </div>
+                <div class="card mb-3" x-show="profile.telescope">
+                    <div class="card-header"><div class="card-title"><i class="fas fa-binoculars text-yellow-400"></i>Телескоп</div></div>
+                    <div class="card-body">
+                        <div class="kv-row"><span class="kv-key">Название:</span><span class="kv-val" x-text="profile.telescope?.name"></span></div>
+                        <div class="kv-row"><span class="kv-key">Монтировка:</span><span class="kv-val" x-text="profile.telescope?.mount_name"></span></div>
+                        <div class="kv-row"><span class="kv-key">Устройство:</span><span class="kv-val" x-text="profile.telescope?.device_name"></span></div>
+                        <div class="kv-row"><span class="kv-key">Фокусное:</span><span class="kv-val" x-text="(profile.telescope?.focal_length || '-') + ' мм'"></span></div>
+                        <div class="kv-row"><span class="kv-key">Светосила:</span><span class="kv-val" x-text="'f/' + (profile.telescope?.focal_ratio || '-')"></span></div>
+                    </div>
+                </div>
+                <div class="card mb-3" x-show="profile.camera">
+                    <div class="card-header"><div class="card-title"><i class="fas fa-camera text-blue-400"></i>Камера</div></div>
+                    <div class="card-body">
+                        <div class="kv-row"><span class="kv-key">Устройство:</span><span class="kv-val" x-text="profile.camera?.device_name"></span></div>
+                        <div class="kv-row"><span class="kv-key">ID:</span><span class="kv-val text-xs" x-text="profile.camera?.device_id"></span></div>
+                        <div class="kv-row"><span class="kv-key">Пиксель:</span><span class="kv-val" x-text="(profile.camera?.pixel_size || '-') + ' мкм'"></span></div>
+                        <div class="kv-row"><span class="kv-key">Gain:</span><span class="kv-val" x-text="profile.camera?.gain"></span></div>
+                        <div class="kv-row"><span class="kv-key">Offset:</span><span class="kv-val" x-text="profile.camera?.offset"></span></div>
+                        <div class="kv-row"><span class="kv-key">Цель темп.:</span><span class="kv-val" x-text="(profile.camera?.temperature_target || '-') + '°C'"></span></div>
+                        <div class="kv-row"><span class="kv-key">Binning:</span><span class="kv-val" x-text="(profile.camera?.binning_x || '1') + 'x' + (profile.camera?.binning_y || '1')"></span></div>
+                    </div>
+                </div>
+                <div class="card mb-3" x-show="profile.focuser">
+                    <div class="card-header"><div class="card-title"><i class="fas fa-crosshairs text-orange-400"></i>Фокусёр</div></div>
+                    <div class="card-body">
+                        <div class="kv-row"><span class="kv-key">Устройство:</span><span class="kv-val" x-text="profile.focuser?.device_name"></span></div>
+                        <div class="kv-row"><span class="kv-key">Шаг АФ:</span><span class="kv-val" x-text="profile.focuser?.af_step_size"></span></div>
+                        <div class="kv-row"><span class="kv-key">Метод:</span><span class="kv-val" x-text="profile.focuser?.af_method"></span></div>
+                        <div class="kv-row"><span class="kv-key">Backlash Out:</span><span class="kv-val" x-text="profile.focuser?.backlash_out"></span></div>
+                    </div>
+                </div>
+                <div class="card mb-3" x-show="profile.filter_wheel">
+                    <div class="card-header"><div class="card-title"><i class="fas fa-filter text-purple-400"></i>Колесо фильтров</div></div>
+                    <div class="card-body">
+                        <div class="kv-row"><span class="kv-key">Устройство:</span><span class="kv-val" x-text="profile.filter_wheel?.device_name"></span></div>
+                        <div class="section-title mt-3">Фильтры:</div>
+                        <div class="space-y-1">
+                            <template x-for="(f, i) in (profile.filter_wheel?.filters || [])" :key="i">
+                                <div class="kv-row">
+                                    <span class="kv-key" x-text="'#' + f.position + ' ' + f.name"></span>
+                                    <span class="kv-val" x-text="'Offset: ' + f.focus_offset"></span>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+                <div class="card mb-3" x-show="profile.guider">
+                    <div class="card-header"><div class="card-title"><i class="fas fa-bullseye text-red-400"></i>Гид</div></div>
+                    <div class="card-body">
+                        <div class="kv-row"><span class="kv-key">Приложение:</span><span class="kv-val" x-text="profile.guider?.name"></span></div>
+                        <div class="kv-row"><span class="kv-key">PHD2 Scale:</span><span class="kv-val" x-text="profile.guider?.phd2_scale"></span></div>
+                        <div class="kv-row"><span class="kv-key">Dither:</span><span class="kv-val" x-text="profile.guider?.dither_pixels"></span></div>
+                        <div class="kv-row"><span class="kv-key">Settle:</span><span class="kv-val" x-text="(profile.guider?.settle_time || '-') + ' с'"></span></div>
+                    </div>
+                </div>
+                <div class="card mb-3" x-show="profile.sequence">
+                    <div class="card-header"><div class="card-title"><i class="fas fa-list-check text-green-400"></i>Последовательность</div></div>
+                    <div class="card-body">
+                        <div class="kv-row"><span class="kv-key">Startup Template:</span><span class="kv-val text-xs" x-text="profile.sequence?.startup_template || '-'"></span></div>
+                        <div class="kv-row"><span class="kv-key">Templates Folder:</span><span class="kv-val text-xs" x-text="profile.sequence?.templates_folder || '-'"></span></div>
+                        <div class="kv-row"><span class="kv-key">Targets Folder:</span><span class="kv-val text-xs" x-text="profile.sequence?.targets_folder || '-'"></span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============ SEQUENCE ============ -->
+<div x-show="activeTab === 'sequence'" class="space-y-4">
+    <h2 class="text-xl font-bold flex items-center gap-2">
+        <i class="fas fa-list-check text-green-400"></i>Последовательность
+        <button @click="refreshSequence(); refreshSequenceTree()" class="btn btn-secondary text-xs py-1 px-3 ml-auto">
+            <i class="fas fa-sync-alt"></i>Обновить
+        </button>
+    </h2>
+    <div class="card">
+        <div class="card-header"><div class="card-title"><i class="fas fa-play-circle text-green-400"></i>Управление</div></div>
+        <div class="card-body">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <button @click="executeCommand('start_seq')" class="btn btn-success py-3 text-base"><i class="fas fa-play text-xl"></i></button>
+                <button @click="executeCommand('stop_seq')" class="btn btn-danger py-3 text-base"><i class="fas fa-stop text-xl"></i></button>
+                <button @click="executeCommand('advance_seq')" class="btn btn-secondary py-3 text-base"><i class="fas fa-forward text-xl"></i></button>
+                <button @click="executeCommand('reset_seq')" class="btn btn-secondary py-3 text-base"><i class="fas fa-redo text-xl"></i></button>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header"><div class="card-title"><i class="fas fa-tasks text-blue-400"></i>Текущее состояние</div></div>
+        <div class="card-body">
+            <div class="sequence-status-line">
+                <div class="status-icon">
+                    <div class="icon-circle" :class="sequence.is_running ? 'bg-green-900/50' : 'bg-gray-700/50'">
+                        <i x-show="sequence.is_running" class="fas fa-play text-green-400 text-3xl"></i>
+                        <i x-show="!sequence.is_running" class="fas fa-stop text-gray-400 text-3xl"></i>
+                    </div>
+                </div>
+                <div class="target-block">
+                    <div class="text-xs text-gray-400 uppercase mb-1">Цель</div>
+                    <div class="text-lg font-bold text-blue-400 truncate" x-text="sequence.target" :title="sequence.target"></div>
+                </div>
+                <div class="stage-block">
+                    <div class="text-xs text-gray-400 uppercase mb-1">Этап</div>
+                    <div class="text-lg font-bold text-purple-400 truncate" x-text="sequence.instruction" :title="sequence.instruction"></div>
+                    <div class="flex gap-4 mt-1 text-sm">
+                        <span class="text-yellow-400" x-show="sequence.progress && sequence.progress !== '-'">
+                            <i class="fas fa-tasks mr-1"></i><span x-text="sequence.progress"></span>
+                        </span>
+                        <span class="text-cyan-400" x-show="sequence.exposure && sequence.exposure !== '-'">
+                            <i class="fas fa-clock mr-1"></i><span x-text="sequence.exposure"></span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title"><i class="fas fa-sitemap text-purple-400"></i>Дерево последовательности</div>
+            <div class="flex items-center gap-3 text-xs">
+                <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-yellow-500"></span>Активный</span>
+                <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-green-500"></span>Выполняется</span>
+                <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-gray-500"></span>Завершено</span>
+                <span class="flex items-center gap-1"><span class="w-3 h-3 rounded bg-blue-500"></span>Ожидает</span>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="seq-tree" x-show="sequenceTree && sequenceTree.length > 0" id="sequenceTreeContainer">
+                <template x-for="(item, idx) in sequenceTree" :key="idx">
+                    <div class="seq-tree-item"
+                         :class="[item.status, item.is_container ? 'container' : '', item.is_active ? 'active' : '']"
+                         :style="'padding-left: ' + (item.depth * 1.2 + 0.7) + 'rem'"
+                         :id="'seq-item-' + idx">
+                        <span class="seq-tree-icon">
+                            <template x-if="item.is_active"><i class="fas fa-bolt text-yellow-400 animate-pulse"></i></template>
+                            <template x-if="!item.is_active && item.status === 'running'"><i class="fas fa-play-circle text-green-400 animate-pulse"></i></template>
+                            <template x-if="!item.is_active && item.status === 'completed'"><i class="fas fa-check-circle text-gray-500"></i></template>
+                            <template x-if="!item.is_active && item.status === 'pending' && !item.is_container"><i class="far fa-circle text-blue-400"></i></template>
+                            <template x-if="item.is_container && item.status !== 'running' && item.status !== 'completed' && !item.is_active"><i class="fas fa-folder text-purple-400"></i></template>
+                        </span>
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2">
+                                <span x-text="item.name" class="font-semibold"></span>
+                                <span class="seq-tree-type" x-text="item.readable_type"></span>
+                            </div>
+                            <div x-show="item.params && item.params.length > 0" class="seq-tree-params">
+                                <template x-for="(param, pidx) in (item.params || [])" :key="pidx">
+                                    <span class="seq-tree-param" x-text="param"></span>
+                                </template>
+                            </div>
+                        </div>
+                        <span x-show="item.iterations" class="seq-tree-info">
+                            <span x-text="(item.completed_iterations || 0) + '/' + item.iterations"></span>
+                        </span>
+                    </div>
+                </template>
+            </div>
+            <div x-show="!sequenceTree || sequenceTree.length === 0" class="text-center text-gray-500 py-6">
+                <i class="fas fa-tree text-3xl mb-2 opacity-30"></i>
+                <p>Последовательность не загружена</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============ CAMERA ============ -->
+<div x-show="activeTab === 'camera'" class="space-y-4">
+    <h2 class="text-xl font-bold flex items-center gap-2"><i class="fas fa-camera text-blue-400"></i>Камера</h2>
+    <div class="card">
+        <div class="card-header"><div class="card-title"><i class="fas fa-temperature-low text-cyan-400"></i>Термостат</div></div>
+        <div class="card-body">
+            <div class="flex items-center gap-3 flex-wrap">
+                <label class="text-sm text-gray-400">Цель (°C):</label>
+                <input type="number" x-model="cameraInputs.temp" class="w-24" value="-15">
+                <button @click="executeCommand('cool', {temperature: parseInt(cameraInputs.temp) || -15})" class="btn btn-primary"><i class="fas fa-snowflake"></i>Охладить</button>
+                <button @click="executeCommand('warm_up')" class="btn btn-warning"><i class="fas fa-sun"></i>Нагреть</button>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header"><div class="card-title"><i class="fas fa-sliders-h text-purple-400"></i>Параметры матрицы</div></div>
+        <div class="card-body">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+                <div><label class="text-xs text-gray-400 block mb-1">Gain:</label><input type="number" x-model="cameraInputs.gain" class="w-full" value="85"></div>
+                <div><label class="text-xs text-gray-400 block mb-1">Offset:</label><input type="number" x-model="cameraInputs.offset" class="w-full" value="10"></div>
+                <button @click="executeCommand('apply_camera_params', {gain: parseInt(cameraInputs.gain), offset: parseInt(cameraInputs.offset)})" class="btn btn-primary w-full"><i class="fas fa-check"></i>Применить</button>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header"><div class="card-title"><i class="fas fa-camera-retro text-green-400"></i>Съёмка</div></div>
+        <div class="card-body space-y-4">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 items-end">
+                <div><label class="text-xs text-gray-400 block mb-1">Выдержка (с):</label><input type="number" x-model="cameraInputs.duration" class="w-full" value="30"></div>
+                <div><label class="text-xs text-gray-400 block mb-1">Количество:</label><input type="number" x-model="cameraInputs.count" class="w-full" value="1"></div>
+                <button @click="capture()" class="btn btn-success w-full"><i class="fas fa-camera"></i>Снять</button>
+                <button @click="executeCommand('abort_capture')" class="btn btn-danger w-full"><i class="fas fa-stop"></i>Прервать</button>
+            </div>
+            <div><label class="text-xs text-gray-400 block mb-2">Быстрые выдержки:</label>
+                <div class="flex gap-2 flex-wrap">
+                    <template x-for="exp in [30, 60, 120, 180, 240]">
+                        <button @click="cameraInputs.duration = exp; capture()" class="btn btn-secondary text-sm"><span x-text="exp + 'с'"></span></button>
+                    </template>
+                </div>
+            </div>
+            <div><label class="text-xs text-gray-400 block mb-2">Быстрые серии:</label>
+                <div class="flex gap-2 flex-wrap">
+                    <template x-for="cnt in [5, 10, 15]">
+                        <button @click="cameraInputs.count = cnt; capture()" class="btn btn-secondary text-sm">Серия x<span x-text="cnt"></span></button>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header"><div class="card-title"><i class="fas fa-chart-line text-yellow-400"></i>Статистика по изображениям</div></div>
+        <div class="card-body">
+            <div class="chart-container mb-4"><canvas id="hfrChart"></canvas></div>
+            <div x-show="imageStats && Object.keys(imageStats).length > 2">
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+                    <div class="gauge-container">
+                        <div class="gauge-value text-yellow-400" x-text="imageStats?.hfr ? parseFloat(imageStats.hfr).toFixed(2) : '-'"></div>
+                        <div class="gauge-unit">px</div><div class="gauge-label">HFR</div>
+                    </div>
+                    <div class="gauge-container">
+                        <div class="gauge-value text-purple-400" x-text="imageStats?.fwhm ? parseFloat(imageStats.fwhm).toFixed(2) : '-'"></div>
+                        <div class="gauge-unit">px</div><div class="gauge-label">FWHM</div>
+                    </div>
+                    <div class="gauge-container">
+                        <div class="gauge-value text-cyan-400" x-text="imageStats?.stars || '-'"></div>
+                        <div class="gauge-label">Звёзд</div>
+                    </div>
+                    <div class="gauge-container">
+                        <div class="gauge-value text-blue-400" x-text="imageStats?.exposure || '-'"></div>
+                        <div class="gauge-unit">с</div><div class="gauge-label">Выдержка</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header"><div class="card-title"><i class="fas fa-chart-line text-cyan-400"></i>Статистика сессии</div></div>
+        <div class="card-body">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div class="metric-box">
+                    <div class="metric-label">Всего кадров</div>
+                    <div class="metric-value text-blue-400" x-text="sessionStats.total_frames || 0"></div>
+                </div>
+                <div class="metric-box">
+                    <div class="metric-label">Общее время</div>
+                    <div class="metric-value text-green-400" x-text="formatDuration(sessionStats.total_exposure_time)"></div>
+                </div>
+                <div class="metric-box">
+                    <div class="metric-label">Средний HFR</div>
+                    <div class="metric-value text-yellow-400" x-text="(sessionStats.avg_hfr || 0).toFixed(2)"></div>
+                </div>
+                <div class="metric-box">
+                    <div class="metric-label">Текущий HFR</div>
+                    <div class="metric-value" :class="getHfrColor(sessionStats.current_hfr)" x-text="sessionStats.current_hfr !== null ? sessionStats.current_hfr.toFixed(2) : '-'"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============ MOUNT ============ -->
+<div x-show="activeTab === 'mount'" class="space-y-4">
+    <h2 class="text-xl font-bold flex items-center gap-2"><i class="fas fa-satellite-dish text-green-400"></i>Монтировка</h2>
+    <div class="card">
+        <div class="card-header"><div class="card-title"><i class="fas fa-gamepad text-blue-400"></i>Управление</div></div>
+        <div class="card-body">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <button @click="executeCommand('park')" class="btn btn-secondary"><i class="fas fa-parking"></i>Парковка</button>
+                <button @click="executeCommand('unpark')" class="btn btn-secondary"><i class="fas fa-lock-open"></i>Распарковать</button>
+                <button @click="executeCommand('stop_slew')" class="btn btn-danger"><i class="fas fa-stop"></i>Стоп</button>
+                <button @click="executeCommand('home_mount')" class="btn btn-secondary"><i class="fas fa-home"></i>Домой</button>
+            </div>
+            <button @click="executeCommand('platesolve')" class="btn btn-primary w-full mt-3"><i class="fas fa-star"></i>Platesolve</button>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header"><div class="card-title"><i class="fas fa-tachometer-alt text-orange-400"></i>Скорость ведения</div></div>
+        <div class="card-body">
+            <div class="grid grid-cols-2 gap-3">
+                <button @click="executeCommand('set_tracking_rate', {rate: 'sidereal'})" class="btn btn-secondary w-full py-3 flex-col h-auto"><i class="fas fa-star text-yellow-400 text-2xl"></i><span class="text-base mt-2 font-semibold">Звёздная</span></button>
+                <button @click="executeCommand('set_tracking_rate', {rate: 'lunar'})" class="btn btn-secondary w-full py-3 flex-col h-auto"><i class="fas fa-moon text-gray-300 text-2xl"></i><span class="text-base mt-2 font-semibold">Лунная</span></button>
+            </div>
+        </div>
+    </div>
+    <!-- КАТАЛОГ DSO с поиском -->
+    <div class="card">
+        <div class="card-header">
+            <div class="card-title"><i class="fas fa-search text-yellow-400"></i>Каталог объектов (DSO)</div>
+            <span class="text-xs text-gray-500" x-text="(state.dso_catalog ? Object.keys(state.dso_catalog).length : 0) + ' объектов'"></span>
+        </div>
+        <div class="card-body">
+            <div class="relative" x-data="{ showCatalog: false, catalogSearch: '', catalogResults: [] }">
+                <div class="relative">
+                    <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500"></i>
+                    <input type="text" x-model="catalogSearch" @input="window.appData?.searchCatalog($event.target.value, $el)" @focus="showCatalog = true" placeholder="Поиск объекта (M31, Андромеда...)" class="w-full pl-10">
+                </div>
+                <div class="catalog-results" x-show="showCatalog && catalogResults.length > 0" @click.away="showCatalog = false">
+                    <template x-for="obj in catalogResults" :key="obj.key">
+                        <div class="catalog-item" @click="slewToObject(obj); showCatalog = false">
+                            <div>
+                                <div class="font-bold" x-text="obj.displayName"></div>
+                                <div class="text-xs text-gray-500" x-text="obj.aliases"></div>
+                            </div>
+                            <div class="text-xs text-blue-400 font-mono" x-text="obj.coords"></div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+            <div class="mt-4 grid grid-cols-2 md:grid-cols-3 gap-2">
+                <template x-for="obj in popularObjects" :key="obj.key">
+                    <button @click="slewToObject(obj)" class="btn btn-secondary text-sm py-2"><i class="fas fa-star text-yellow-400 text-xs"></i><span x-text="obj.displayName"></span></button>
+                </template>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============ FOCUSER ============ -->
+<div x-show="activeTab === 'focuser'" class="space-y-4">
+    <h2 class="text-xl font-bold flex items-center gap-2"><i class="fas fa-crosshairs text-orange-400"></i>Фокусёр</h2>
+    <div class="card">
+        <div class="card-body">
+            <button @click="executeCommand('autofocus')" class="btn btn-primary w-full py-3 mb-4 text-lg"><i class="fas fa-magic"></i>Автофокус</button>
+            <div class="section-title">Ручной сдвиг</div>
+            <div class="flex gap-2 mb-4 flex-wrap">
+                <button @click="executeCommand('move_focuser', {steps: -500})" class="btn btn-secondary flex-1">-500</button>
+                <button @click="executeCommand('move_focuser', {steps: -50})" class="btn btn-secondary flex-1">-50</button>
+                <button @click="executeCommand('move_focuser', {steps: 50})" class="btn btn-secondary flex-1">+50</button>
+                <button @click="executeCommand('move_focuser', {steps: 500})" class="btn btn-secondary flex-1">+500</button>
+            </div>
+            <div class="section-title">Точная позиция</div>
+            <div class="flex gap-3">
+                <input type="number" x-model="focuserInputs.position" class="flex-1" placeholder="Позиция">
+                <button @click="executeCommand('move_focuser_abs', {position: parseInt(focuserInputs.position)})" class="btn btn-primary"><i class="fas fa-arrow-right"></i>Перейти</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============ FILTERS ============ -->
+<div x-show="activeTab === 'filters'" class="space-y-4">
+    <h2 class="text-xl font-bold flex items-center gap-2"><i class="fas fa-filter text-purple-400"></i>Фильтры</h2>
+    <div class="card"><div class="card-body">
+        <div class="flex flex-wrap gap-2">
+            <template x-for="(filter, idx) in state.equipment?.registry?.Filters || []" :key="filter">
+                <button @click="executeCommand('set_filter', {filter: filter})" class="btn-filter py-3 px-4 min-w-[140px] flex-1">
+                    <i class="fas fa-circle text-xs flex-shrink-0 mt-1"
+                       :class="{'text-red-400': idx % 8 === 0, 'text-blue-400': idx % 8 === 1, 'text-green-400': idx % 8 === 2, 'text-yellow-400': idx % 8 === 3, 'text-purple-400': idx % 8 === 4, 'text-pink-400': idx % 8 === 5, 'text-cyan-400': idx % 8 === 6, 'text-orange-400': idx % 8 === 7}"></i>
+                    <span x-text="filter" class="text-left leading-tight"></span>
+                </button>
+            </template>
+        </div>
+    </div></div>
+</div>
+
+<!-- ============ GUIDER ============ -->
+<div x-show="activeTab === 'guider'" class="space-y-4">
+    <h2 class="text-xl font-bold flex items-center gap-2"><i class="fas fa-bullseye text-red-400"></i>Автогид</h2>
+    <div class="card">
+        <div class="card-header"><div class="card-title"><i class="fas fa-chart-line text-red-400"></i>Статус гидирования</div></div>
+        <div class="card-body">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                <div class="gauge-container">
+                    <div class="gauge-value" :class="getRmsColor(guiderDetails.rms_total)" x-text="guiderDetails.rms_total ? parseFloat(guiderDetails.rms_total).toFixed(2) : '-'"></div>
+                    <div class="gauge-unit" x-text="guiderUnit === 'pixels' ? 'px' : '&quot;'"></div><div class="gauge-label">RMS Total</div>
+                </div>
+                <div class="gauge-container">
+                    <div class="gauge-value text-blue-400" x-text="guiderDetails.rms_ra ? parseFloat(guiderDetails.rms_ra).toFixed(2) : '-'"></div>
+                    <div class="gauge-unit" x-text="guiderUnit === 'pixels' ? 'px' : '&quot;'"></div><div class="gauge-label">RMS RA</div>
+                </div>
+                <div class="gauge-container">
+                    <div class="gauge-value text-red-400" x-text="guiderDetails.rms_dec ? parseFloat(guiderDetails.rms_dec).toFixed(2) : '-'"></div>
+                    <div class="gauge-unit" x-text="guiderUnit === 'pixels' ? 'px' : '&quot;'"></div><div class="gauge-label">RMS Dec</div>
+                </div>
+                <div class="gauge-container">
+                    <div class="gauge-value text-yellow-400" x-text="guiderDetails.pixel_scale ? parseFloat(guiderDetails.pixel_scale).toFixed(2) : '-'"></div>
+                    <div class="gauge-unit">&quot;/px</div><div class="gauge-label">Pixel Scale</div>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
+                <button @click="executeCommand('start_guide')" class="btn btn-success py-2"><i class="fas fa-play"></i>Старт</button>
+                <button @click="executeCommand('stop_guide')" class="btn btn-danger py-2"><i class="fas fa-stop"></i>Стоп</button>
+                <button @click="executeCommand('dither_on')" class="btn btn-secondary py-2"><i class="fas fa-random"></i>Дизеринг</button>
+                <button @click="executeCommand('calibrate_guide')" class="btn btn-secondary py-2"><i class="fas fa-sync"></i>Калибр.</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ============ ROTATOR ============ -->
+<div x-show="activeTab === 'rotator'" class="space-y-4">
+    <h2 class="text-xl font-bold flex items-center gap-2"><i class="fas fa-sync-alt text-cyan-400"></i>Ротатор</h2>
+    <div class="card"><div class="card-body">
+        <div class="flex gap-3">
+            <input type="number" x-model="rotatorInputs.angle" class="flex-1" placeholder="Угол" value="0">
+            <button @click="executeCommand('rotator_move', {position: parseFloat(rotatorInputs.angle)})" class="btn btn-primary"><i class="fas fa-redo"></i>Повернуть</button>
+        </div>
+    </div></div>
+</div>
+
+</div>
+<!-- ============ CHAT PANEL ============ -->
+<div class="chat-panel bg-gray-900/50 backdrop-blur-sm border-l border-gray-800/50 flex flex-col">
+    <div class="p-3 border-b border-gray-800/50 bg-gradient-to-r from-purple-900/20 to-blue-900/20">
+        <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
+            <div class="card-title">
+                <i class="fas fa-brain text-purple-400"></i>AI
+                <span x-show="aiStatus.thinking" class="thinking text-yellow-400 text-sm ml-2"></span>
+            </div>
+            <select @change="setAiMode($event.target.value)" :value="aiStatus.mode" class="text-sm py-1 px-3 bg-gray-800 rounded-lg border border-gray-700">
+                <option value="auto">Авто</option>
+                <option value="command">Команды</option>
+                <option value="consultant">Консультант</option>
+            </select>
+        </div>
+        <div class="ai-stats-compact">
+            <div class="ai-stat-item"><span class="ai-stat-label">Запросов:</span><span class="ai-stat-value" x-text="aiStatus.requests_count || 0"></span></div>
+            <div class="ai-stat-item"><span class="ai-stat-label">Успех:</span><span class="ai-stat-value text-green-400" x-text="aiStatus.success_count || 0"></span></div>
+            <div class="ai-stat-item"><span class="ai-stat-label">Ошибки:</span><span class="ai-stat-value" :class="(aiStatus.errors_count || 0) > 0 ? 'text-red-400' : ''" x-text="aiStatus.errors_count || 0"></span></div>
+            <div class="ai-stat-item"><span class="ai-stat-label">Последний:</span><span class="ai-stat-value text-sm" x-text="aiStatus.last_response ? new Date(aiStatus.last_response).toLocaleTimeString() : '--'"></span></div>
+        </div>
+    </div>
+    <div class="p-3 border-b border-gray-800/50 flex items-center justify-between">
+        <div class="card-title"><i class="fas fa-comments text-blue-400"></i>Чат</div>
+        <button @click="clearChat()" class="text-gray-400 hover:text-white p-1" title="Очистить"><i class="fas fa-trash text-xs"></i></button>
+    </div>
+    <div class="flex-1 overflow-y-auto p-3" id="chat-container">
+        <template x-for="msg in chatMessages" :key="msg.id || (msg.time + msg.sender + msg.message)">
+            <div class="chat-message" :class="{'chat-user': msg.sender === 'Вы', 'chat-ai': msg.sender === 'AI', 'chat-system': msg.sender === 'Система'}">
+                <div class="text-xs opacity-70 mb-1 flex items-center gap-2 flex-wrap">
+                    <span x-text="msg.sender"></span><span>-</span><span x-text="msg.time"></span>
+                </div>
+                <div class="whitespace-pre-wrap text-sm" x-text="msg.message"></div>
+            </div>
+        </template>
+        <div x-show="chatMessages.length === 0" class="text-center text-gray-500 py-8">
+            <i class="fas fa-robot text-4xl mb-3"></i>
+            <p>Начните диалог</p>
+            <p class="text-xs mt-2">"Подключи всё", "Наведись на M31", "Что лучше снять?"</p>
+        </div>
+    </div>
+    <div class="p-3 border-t border-gray-800/50">
+        <form @submit.prevent="sendMessage()" class="flex gap-2">
+            <input type="text" x-model="chatInput" placeholder="Команда или вопрос..." class="flex-1" autocomplete="off">
+            <button type="submit" class="btn btn-primary" :disabled="!chatInput.trim()"><i class="fas fa-paper-plane"></i></button>
+        </form>
+    </div>
+    <div class="h-32 border-t border-gray-800/50 flex flex-col bg-black/20">
+        <div class="p-2 border-b border-gray-800/50 flex items-center justify-between">
+            <div class="card-title text-xs"><i class="fas fa-terminal text-green-400"></i>Лог</div>
+            <button @click="clearLog()" class="text-xs text-gray-400 hover:text-white p-1"><i class="fas fa-trash"></i></button>
+        </div>
+        <div class="flex-1 overflow-y-auto" id="log-container">
+            <template x-for="entry in logMessages" :key="entry.time + entry.message">
+                <div class="log-entry" :class="'log-' + entry.level">
+                    <span class="text-gray-500">[<span x-text="entry.time"></span>]</span>
+                    <span class="font-bold">[<span x-text="entry.level"></span>]</span>
+                    <span x-text="entry.message"></span>
+                </div>
+            </template>
+        </div>
+    </div>
+</div>
+</div>
+</main>
+</div>
+
+<!-- ============ SETTINGS MODAL ============ -->
+<div x-show="showSettings" class="modal-backdrop" @click.self="showSettings = false">
+    <div class="modal-content p-6">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-bold flex items-center gap-2"><i class="fas fa-cog text-blue-400"></i>Настройки</h2>
+            <button @click="showSettings = false" class="text-gray-400 hover:text-white"><i class="fas fa-times text-xl"></i></button>
+        </div>
+        <div class="space-y-4">
+            <div class="card p-4">
+                <div class="section-title mb-3">Подключение</div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div><label class="text-xs text-gray-400">NINA Host:</label><input type="text" x-model="settingsForm.host" class="w-full"></div>
+                    <div><label class="text-xs text-gray-400">NINA Port:</label><input type="number" x-model="settingsForm.port" class="w-full"></div>
+                    <div><label class="text-xs text-gray-400">Ollama URL:</label><input type="text" x-model="settingsForm.ollama" class="w-full"></div>
+                    <div><label class="text-xs text-gray-400">Модель AI:</label>
+                        <select x-model="settingsForm.model" class="w-full">
+                            <option value="gemma4:e2b">gemma4:e2b</option>
+                            <template x-for="model in state.available_models || []" :key="model"><option :value="model" x-text="model"></option></template>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="card p-4">
+                <div class="section-title mb-3">Пути NINA</div>
+                <div class="space-y-2">
+                    <div><label class="text-xs text-gray-400">Папка профилей:</label><input type="text" x-model="settingsForm.profiles_dir" class="w-full"></div>
+                    <div><label class="text-xs text-gray-400">Папка последовательностей:</label><input type="text" x-model="settingsForm.sequence_dir" class="w-full"></div>
+                    <div><label class="text-xs text-gray-400">Папка сессий (Session Metadata):</label><input type="text" x-model="settingsForm.session_metadata_dir" class="w-full"></div>
+                </div>
+            </div>
+            <div class="card p-4">
+                <div class="section-title mb-3">Prometheus</div>
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" x-model="settingsForm.prometheus.enabled" class="w-4 h-4">
+                    <span>Включить сбор метрик</span>
+                </label>
+                <div class="grid grid-cols-2 gap-3 mt-2">
+                    <div><label class="text-xs text-gray-400">Интервал (сек):</label><input type="number" x-model="settingsForm.prometheus.scrape_interval_seconds" class="w-full"></div>
+                    <div><label class="text-xs text-gray-400">Хранение (часов):</label><input type="number" x-model="settingsForm.prometheus.retention_hours" class="w-full"></div>
+                </div>
+            </div>
+            <div class="card p-4">
+                <div class="section-title mb-3">Session Metadata</div>
+                <label class="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" x-model="settingsForm.session_metadata.enabled" class="w-4 h-4">
+                    <span>Включить парсинг метаданных сессии</span>
+                </label>
+            </div>
+            <div class="card p-4">
+                <div class="section-title mb-3">Автогид</div>
+                <div class="grid grid-cols-2 gap-3">
+                    <div><label class="text-xs text-gray-400">Единицы RMS:</label>
+                        <select x-model="settingsForm.guider_unit" class="w-full">
+                            <option value="arcsec">Секунды дуги (")</option>
+                            <option value="pixels">Пиксели (px)</option>
+                        </select>
+                    </div>
+                    <div><label class="text-xs text-gray-400">Pixel Scale ("/px):</label>
+                        <input type="number" step="0.01" x-model="settingsForm.guider_pixel_scale" class="w-full">
+                    </div>
+                </div>
+            </div>
+            <div class="card p-4">
+                <div class="section-title mb-3">AI и контекст</div>
+                <div><label class="text-xs text-gray-400 block mb-1">Длина контекста AI:</label>
+                    <input type="number" x-model="settingsForm.chat_context_length" min="1" max="100" class="w-24">
+                </div>
+            </div>
+            <div class="card p-4">
+                <div class="section-title mb-3">Активные вкладки</div>
+                <div class="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    <template x-for="mod in modulesList" :key="mod.id">
+                        <label class="flex items-center gap-2 cursor-pointer text-sm p-2 hover:bg-gray-800/50 rounded">
+                            <input type="checkbox" :checked="settingsForm.modules?.[mod.id] !== false" @change="settingsForm.modules[mod.id] = $event.target.checked" class="w-4 h-4">
+                            <span x-text="mod.name"></span>
+                        </label>
+                    </template>
+                </div>
+            </div>
+            <div class="card p-4">
+                <div class="section-title mb-3">Диагностика</div>
+                <button @click="runApiTest()" class="btn btn-primary w-full py-3"><i class="fas fa-vial"></i>Тест всех команд API</button>
+                <div x-show="testResults" class="mt-3 text-xs">
+                    <div class="p-3 bg-gray-800/50 rounded">
+                        <div class="font-semibold mb-2">Результаты:</div>
+                        <div>Всего: <span class="text-blue-400" x-text="testResults?.length || 0"></span></div>
+                        <div>Успешно: <span class="text-green-400" x-text="(testResults || []).filter(r => r.status === 'OK').length"></span></div>
+                        <div>Ошибок: <span class="text-red-400" x-text="(testResults || []).filter(r => r.status === 'ERROR' || r.status === 'EXCEPTION').length"></span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="flex gap-3 mt-6">
+            <button @click="saveSettings()" class="btn btn-primary flex-1 py-3"><i class="fas fa-save"></i>Сохранить</button>
+            <button @click="showSettings = false" class="btn btn-secondary flex-1 py-3">Отмена</button>
+        </div>
+    </div>
+</div>
+
+<!-- ============ HELP MODAL ============ -->
+<div x-show="showHelp" class="modal-backdrop" @click.self="showHelp = false">
+    <div class="modal-content p-6">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-xl font-bold flex items-center gap-2"><i class="fas fa-question-circle text-blue-400"></i>Справка</h2>
+            <button @click="showHelp = false" class="text-gray-400 hover:text-white"><i class="fas fa-times text-xl"></i></button>
+        </div>
+        <div class="space-y-4 text-sm">
+            <div>
+                <h3 class="font-bold text-lg mb-2">Новое в v10</h3>
+                <ul class="list-disc list-inside space-y-1 text-gray-300">
+                    <li><b class="text-orange-400">Prometheus Метрики</b> - мониторинг всех параметров в реальном времени по 8 категориям</li>
+                    <li><b class="text-indigo-400">Session Metadata</b> - парсинг CSV/JSON сессии (HFR/FWHM статистика по фильтрам)</li>
+                    <li><b class="text-purple-400">Продвинутый парсинг Sequence</b> - читаемые имена, Expression, Triggers, Conditions, активный элемент</li>
+                    <li><b class="text-green-400">Аналитика сессии</b> - единая вкладка с Prometheus/Session/Профилем</li>
+                    <li>Эндпоинт <code class="bg-gray-800 px-1 rounded">/api/metrics</code> для внешних систем мониторинга</li>
+                </ul>
+            </div>
+            <div>
+                <h3 class="font-bold text-lg mb-2">Режимы работы AI</h3>
+                <ul class="list-disc list-inside space-y-1 text-gray-300">
+                    <li><b class="text-blue-400">Авто</b> - умная маршрутизация (вопросы/команды)</li>
+                    <li><b class="text-yellow-400">Команды</b> - только выполнение</li>
+                    <li><b class="text-purple-400">Консультант</b> - ответы и советы</li>
+                </ul>
+            </div>
+            <p class="text-center text-gray-500 mt-6 pt-4 border-t border-gray-800">NINA AI Assistant Web - v10</p>
+        </div>
+    </div>
+</div>
+
+<script>
+window.appData = null;
+let hfrChart = null;
+let metricsChart = null;
+
+function app() {
+    return {
+        activeTab: 'dashboard',
+        analyticsSubTab: 'prometheus',
+        showSettings: false,
+        showHelp: false,
+        state: {},
+        aiStatus: { thinking: false, mode: 'auto', requests_count: 0, errors_count: 0, success_count: 0, last_response: null },
+        sequence: { status: 'НЕТ ДАННЫХ', target: '-', instruction: '-', progress: '-', exposure: '-', is_running: false },
+        sequenceTree: [],
+        chatMessages: [],
+        logMessages: [],
+        chatInput: '',
+        popularObjects: [],
+        detailedTel: {},
+        profile: {},
+        imageStats: {},
+        sessionStats: {},
+        environment: {},
+        guiderDetails: {},
+        guiderUnit: 'arcsec',
+        imageHistory: [],
+        hfrHistory: [],
+        testResults: null,
+        cameraInputs: { temp: -15, gain: 85, offset: 10, duration: 30, count: 1 },
+        focuserInputs: { position: 0 },
+        rotatorInputs: { angle: 0 },
+        settings: {},
+        settingsForm: {},
+        ws: null,
+        wsReconnectAttempts: 0,
+        metricsSnapshot: {},
+        metricsSnapshotTime: null,
+        metricsHistory: [],
+        metricsHistoryMinutes: 60,
+        selectedMetrics: ['nina_camera_temperature_celsius', 'nina_guider_rms_total_arcsec', 'nina_image_hfr_pixels'],
+        metricChartKeys: [
+            'nina_camera_temperature_celsius', 'nina_camera_target_temperature_celsius',
+            'nina_guider_rms_total_arcsec', 'nina_guider_rms_ra_arcsec', 'nina_guider_rms_dec_arcsec',
+            'nina_image_hfr_pixels', 'nina_image_fwhm_pixels', 'nina_image_stars_count',
+            'nina_focuser_position_steps', 'nina_focuser_temperature_celsius',
+            'nina_environment_temperature_celsius', 'nina_environment_humidity_percent',
+            'nina_session_frames_total', 'nina_mount_ra_hours', 'nina_mount_dec_degrees',
+        ],
+        sessionMetadata: {},
+        tabs: [
+            { id: 'dashboard', name: 'Dashboard', icon: 'fas fa-home' },
+            { id: 'analytics', name: 'Аналитика сессии', icon: 'fas fa-chart-pie' },
+            { id: 'sequence', name: 'Последовательность', icon: 'fas fa-list-check' },
+            { id: 'camera', name: 'Камера', icon: 'fas fa-camera' },
+            { id: 'mount', name: 'Монтировка', icon: 'fas fa-satellite-dish' },
+            { id: 'focuser', name: 'Фокусёр', icon: 'fas fa-crosshairs' },
+            { id: 'filters', name: 'Фильтры', icon: 'fas fa-filter' },
+            { id: 'guider', name: 'Автогид', icon: 'fas fa-bullseye' },
+            { id: 'rotator', name: 'Ротатор', icon: 'fas fa-sync-alt' }
+        ],
+        modulesList: [
+            { id: 'sequence', name: 'Последовательность' },
+            { id: 'camera', name: 'Камера' },
+            { id: 'mount', name: 'Монтировка' },
+            { id: 'focuser', name: 'Фокусёр' },
+            { id: 'filters', name: 'Фильтры' },
+            { id: 'guider', name: 'Автогид' },
+            { id: 'rotator', name: 'Ротатор' },
+            { id: 'prometheus', name: 'Prometheus' },
+            { id: 'session_metadata', name: 'Session Metadata' }
+        ],
+        async init() {
+            await this.loadState();
+            this.buildPopularObjects();
+            this.connectWebSocket();
+            this.$nextTick(() => {
+                this.initChart();
+                this.initMetricsChart();
+            });
+            setInterval(() => this.refreshSequence(), 5000);
+            setInterval(() => this.refreshSequenceTree(), 3000);
+            setInterval(() => this.refreshImages(), 5000);
+            setInterval(() => this.refreshTelemetry(), 5000);
+            setInterval(() => this.refreshEnvironment(), 15000);
+            setInterval(() => this.refreshGuider(), 5000);
+            setInterval(() => this.refreshMetrics(), 5000);
+            setInterval(() => this.refreshSessionMetadata(), 10000);
+            window.appData = this;
+        },
+        initChart() {
+            const ctx = document.getElementById('hfrChart');
+            if (ctx && typeof Chart !== 'undefined' && !hfrChart) {
+                hfrChart = new Chart(ctx, {
+                    type: 'line',
+                    data: { labels: [], datasets: [{ label: 'HFR', data: [], borderColor: '#f59e0b', backgroundColor: 'rgba(245, 158, 11, 0.1)', tension: 0.3, fill: true, pointRadius: 2 }] },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { labels: { color: '#9ca3af' } } },
+                        scales: {
+                            x: { type: 'time', time: { unit: 'second', displayFormats: { second: 'HH:mm:ss' } }, ticks: { color: '#9ca3af', maxRotation: 0 }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                            y: { ticks: { color: '#9ca3af' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                        }
+                    }
+                });
+            }
+        },
+        initMetricsChart() {
+            const ctx = document.getElementById('metricsChart');
+            if (ctx && typeof Chart !== 'undefined' && !metricsChart) {
+                metricsChart = new Chart(ctx, {
+                    type: 'line',
+                    data: { labels: [], datasets: [] },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { labels: { color: '#9ca3af' } } },
+                        scales: {
+                            x: { type: 'time', time: { unit: 'minute', displayFormats: { minute: 'HH:mm' } }, ticks: { color: '#9ca3af' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+                            y: { ticks: { color: '#9ca3af' }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                        }
+                    }
+                });
+            }
+        },
+        updateChart() {
+            if (hfrChart && this.hfrHistory.length > 0) {
+                hfrChart.data.labels = this.hfrHistory.map(h => new Date(h.timestamp));
+                hfrChart.data.datasets[0].data = this.hfrHistory.map(h => ({x: new Date(h.timestamp), y: h.hfr || null}));
+                hfrChart.update('none');
+            }
+        },
+        updateMetricsChart() {
+            if (!metricsChart || !this.metricsHistory.length) return;
+            const colors = ['#f59e0b', '#3b82f6', '#10b981', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#f97316'];
+            const labels = this.metricsHistory.map(h => new Date(h.timestamp));
+            const datasets = this.selectedMetrics.map((key, i) => ({
+                label: key.replace('nina_', '').replace(/_/g, ' '),
+                data: this.metricsHistory.map(h => ({ x: new Date(h.timestamp), y: h[key] || null })),
+                borderColor: colors[i % colors.length],
+                backgroundColor: colors[i % colors.length] + '20',
+                tension: 0.3, fill: false, pointRadius: 0, borderWidth: 2,
+            }));
+            metricsChart.data.labels = labels;
+            metricsChart.data.datasets = datasets;
+            metricsChart.update('none');
+        },
+        toggleMetricOnChart(key) {
+            const idx = this.selectedMetrics.indexOf(key);
+            if (idx >= 0) this.selectedMetrics.splice(idx, 1);
+            else if (this.selectedMetrics.length < 6) this.selectedMetrics.push(key);
+            this.updateMetricsChart();
+        },
+        formatMetricValue(key, val) {
+            if (val === null || val === undefined) return '—';
+            if (typeof val === 'number') {
+                if (key.includes('temperature')) return val.toFixed(1) + '°C';
+                if (key.includes('arcsec')) return val.toFixed(2) + '"';
+                if (key.includes('percent')) return val.toFixed(1) + '%';
+                if (key.includes('hpa')) return val.toFixed(1) + ' hPa';
+                if (key.includes('hours')) return val.toFixed(3) + 'h';
+                if (key.includes('degrees')) return val.toFixed(2) + '°';
+                if (key.includes('_frames_total') || key.includes('_errors') || key.includes('_requests')) return Math.round(val);
+                return Math.abs(val) >= 100 ? Math.round(val) : val.toFixed(2);
+            }
+            return val;
+        },
+        formatDurationShort(seconds) {
+            if (!seconds) return '0с';
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            if (h > 0) return `${h}ч ${m}м`;
+            if (m > 0) return `${m}м`;
+            return `${Math.floor(seconds)}с`;
+        },
+        formatTimestamp(ts) {
+            if (!ts) return '—';
+            try { return new Date(ts).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', second: '2-digit' }); }
+            catch { return ts; }
+        },
+        async loadState() {
+            try {
+                const resp = await fetch('/api/state');
+                this.state = await resp.json();
+                this.chatMessages = this.state.chat_history || [];
+                this.logMessages = this.state.log_history || [];
+                this.aiStatus = this.state.ai_status || this.aiStatus;
+                this.settings = this.state.settings || {};
+                this.guiderUnit = this.settings.guider_unit || 'arcsec';
+                this.detailedTel = this.state.detailed_telemetry || {};
+                this.profile = this.state.nina_profile || {};
+                this.imageStats = this.state.image_stats || {};
+                this.sessionStats = this.state.session_stats || {};
+                this.imageHistory = this.state.image_history || [];
+                this.environment = this.state.environment || {};
+                this.guiderDetails = this.state.guider_details || {};
+                this.sequenceTree = this.state.sequence_tree || [];
+                this.metricsSnapshot = this.state.prometheus?.snapshot || {};
+                this.metricsHistory = this.state.prometheus?.history || [];
+                this.sessionMetadata = this.state.session_metadata || {};
+                this.settingsForm = JSON.parse(JSON.stringify(this.settings));
+                if (!this.settingsForm.prometheus) this.settingsForm.prometheus = { enabled: true, scrape_interval_seconds: 5, retention_hours: 24 };
+                if (!this.settingsForm.session_metadata) this.settingsForm.session_metadata = { enabled: true };
+                if (!this.settingsForm.modules) this.settingsForm.modules = {};
+                if (this.imageHistory.length > 0) {
+                    this.hfrHistory = this.imageHistory.map(h => ({ timestamp: h.timestamp, hfr: parseFloat(h.hfr) || null }));
+                    this.$nextTick(() => this.updateChart());
+                }
+                this.$nextTick(() => {
+                    this.scrollChat();
+                    this.initChart();
+                    this.initMetricsChart();
+                    this.updateMetricsChart();
+                    this.scrollToActiveSequenceItem();
+                });
+            } catch (e) { console.error('Load state error:', e); }
+        },
+        scrollToActiveSequenceItem() {
+            this.$nextTick(() => {
+                const container = document.getElementById('sequenceTreeContainer');
+                if (!container) return;
+                const active = container.querySelector('.seq-tree-item.active');
+                if (active) active.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            });
+        },
+        buildPopularObjects() {
+            const popularKeys = ['m31', 'm42', 'm45', 'm13', 'm51', 'ngc7000', 'ngc6992', 'ic1318', 'm8', 'm20'];
+            const catalog = this.state.dso_catalog || {};
+            const result = [];
+            for (const key of popularKeys) {
+                if (catalog[key]) {
+                    const data = catalog[key];
+                    const displayName = data.aliases?.[0] || key.toUpperCase();
+                    result.push({
+                        key: key,
+                        displayName: displayName.charAt(0).toUpperCase() + displayName.slice(1),
+                        aliases: (data.aliases || []).slice(0, 3).join(', '),
+                        coords: `RA:${data.ra?.toFixed(2)}h Dec:${data.dec?.toFixed(1)}`
+                    });
+                }
+            }
+            this.popularObjects = result.slice(0, 9);
+        },
+        searchCatalog(query, inputEl) {
+            const parent = inputEl.closest('[x-data]');
+            const alpineData = Alpine.$data(parent);
+            if (!query || query.length < 2) {
+                alpineData.catalogResults = [];
+                alpineData.showCatalog = false;
+                return;
+            }
+            const search = query.toLowerCase().trim();
+            const catalog = this.state.dso_catalog || {};
+            const results = [];
+            for (const [key, data] of Object.entries(catalog)) {
+                const aliases = data.aliases || [];
+                const allNames = [key, ...aliases].map(n => String(n).toLowerCase());
+                if (allNames.some(name => name.includes(search))) {
+                    results.push({
+                        key: key,
+                        displayName: (aliases[0] || key.toUpperCase()).toString(),
+                        aliases: aliases.slice(0, 4).join(', '),
+                        coords: `RA:${data.ra?.toFixed(2)}h Dec:${data.dec?.toFixed(1)}`
+                    });
+                }
+            }
+            results.sort((a, b) => {
+                const aExact = a.displayName.toLowerCase() === search || a.key === search;
+                const bExact = b.displayName.toLowerCase() === search || b.key === search;
+                if (aExact && !bExact) return -1;
+                if (!aExact && bExact) return 1;
+                return a.displayName.localeCompare(b.displayName);
+            });
+            alpineData.catalogResults = results.slice(0, 15);
+            alpineData.showCatalog = results.length > 0;
+        },
+        slewToObject(obj) { this.executeCommand('slew_object', { object: obj.key }); },
+        connectWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            this.ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
+            this.ws.onopen = () => { this.wsReconnectAttempts = 0; };
+            this.ws.onmessage = (event) => {
+                try {
+                    const msg = JSON.parse(event.data);
+                    this.handleWsMessage(msg);
+                } catch (e) { console.error('WS parse error:', e); }
+            };
+            this.ws.onclose = () => {
+                const delay = Math.min(1000 * Math.pow(2, this.wsReconnectAttempts), 30000);
+                this.wsReconnectAttempts++;
+                setTimeout(() => this.connectWebSocket(), delay);
+            };
+            setInterval(() => {
+                if (this.ws && this.ws.readyState === WebSocket.OPEN) this.ws.send(JSON.stringify({type: 'ping'}));
+            }, 25000);
+        },
+        handleWsMessage(msg) {
+            switch (msg.type) {
+                case 'init':
+                    this.state = msg.data;
+                    this.chatMessages = msg.data.chat_history || [];
+                    this.logMessages = msg.data.log_history || [];
+                    this.aiStatus = msg.data.ai_status || this.aiStatus;
+                    this.settings = msg.data.settings || {};
+                    this.guiderUnit = this.settings.guider_unit || 'arcsec';
+                    this.detailedTel = msg.data.detailed_telemetry || {};
+                    this.profile = msg.data.nina_profile || {};
+                    this.imageStats = msg.data.image_stats || {};
+                    this.sessionStats = msg.data.session_stats || {};
+                    this.imageHistory = msg.data.image_history || [];
+                    this.environment = msg.data.environment || {};
+                    this.guiderDetails = msg.data.guider_details || {};
+                    this.sequenceTree = msg.data.sequence_tree || [];
+                    this.metricsSnapshot = msg.data.prometheus?.snapshot || {};
+                    this.metricsHistory = msg.data.prometheus?.history || [];
+                    this.sessionMetadata = msg.data.session_metadata || {};
+                    this.settingsForm = JSON.parse(JSON.stringify(this.settings));
+                    if (!this.settingsForm.prometheus) this.settingsForm.prometheus = { enabled: true, scrape_interval_seconds: 5, retention_hours: 24 };
+                    if (!this.settingsForm.session_metadata) this.settingsForm.session_metadata = { enabled: true };
+                    this.buildPopularObjects();
+                    this.$nextTick(() => {
+                        this.updateChart();
+                        this.updateMetricsChart();
+                        this.scrollToActiveSequenceItem();
+                    });
+                    break;
+                case 'chat':
+                    const newMsg = msg.data;
+                    const existingIdx = this.chatMessages.findIndex(m => m.id === newMsg.id);
+                    if (existingIdx !== -1) this.chatMessages[existingIdx] = newMsg;
+                    else this.chatMessages.push(newMsg);
+                    if (this.chatMessages.length > 200) this.chatMessages.shift();
+                    this.$nextTick(() => this.scrollChat());
+                    break;
+                case 'chat_clear': this.chatMessages = []; break;
+                case 'log':
+                    this.logMessages.push(msg.data);
+                    if (this.logMessages.length > 500) this.logMessages.shift();
+                    this.$nextTick(() => this.scrollLog());
+                    break;
+                case 'log_clear': this.logMessages = []; break;
+                case 'ai_status': this.aiStatus = msg.data; break;
+                case 'equipment': this.state.equipment = msg.data; break;
+                case 'detailed_telemetry': this.detailedTel = msg.data || {}; break;
+                case 'profile': this.profile = msg.data || {}; break;
+                case 'environment': this.environment = msg.data || {}; break;
+                case 'image_stats':
+                    const imgData = msg.data || {};
+                    this.imageStats = imgData.current || {};
+                    this.sessionStats = imgData.session || {};
+                    if (imgData.history) {
+                        this.imageHistory = imgData.history;
+                        this.hfrHistory = this.imageHistory.map(h => ({ timestamp: h.timestamp, hfr: parseFloat(h.hfr) || null }));
+                        this.$nextTick(() => this.updateChart());
+                    }
+                    break;
+                case 'guider_details': this.guiderDetails = msg.data || {}; break;
+                case 'sequence_state': this.sequence = msg.data || this.sequence; break;
+                case 'sequence_tree':
+                    this.sequenceTree = msg.data || [];
+                    this.$nextTick(() => this.scrollToActiveSequenceItem());
+                    break;
+                case 'metrics_snapshot':
+                    this.metricsSnapshot = msg.data.snapshot || {};
+                    this.metricsSnapshotTime = new Date(msg.data.timestamp).toLocaleTimeString();
+                    break;
+                case 'metrics_history':
+                    this.metricsHistory = msg.data.history || [];
+                    this.$nextTick(() => this.updateMetricsChart());
+                    break;
+                case 'session_metadata':
+                    this.sessionMetadata = msg.data || {};
+                    break;
+                case 'test_results': this.testResults = msg.data || []; break;
+            }
+        },
+        scrollChat() { const el = document.getElementById('chat-container'); if (el) el.scrollTop = el.scrollHeight; },
+        scrollLog() { const el = document.getElementById('log-container'); if (el) el.scrollTop = el.scrollHeight; },
+        getHfrColor(hfr) {
+            if (hfr === null || hfr === undefined) return 'text-gray-400';
+            if (hfr < 2.5) return 'text-green-400';
+            if (hfr < 3.5) return 'text-yellow-400';
+            return 'text-red-400';
+        },
+        getRmsColor(rms) {
+            if (!rms) return 'text-gray-400';
+            const v = parseFloat(rms);
+            if (v < 1.0) return 'text-green-400';
+            if (v < 2.0) return 'text-yellow-400';
+            return 'text-red-400';
+        },
+        formatDuration(seconds) {
+            if (!seconds) return '0с';
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            if (h > 0) return `${h}ч ${m}м`;
+            if (m > 0) return `${m}м`;
+            return `${Math.floor(seconds)}с`;
+        },
+        async refreshSequence() {
+            try { const resp = await fetch('/api/sequence'); this.sequence = await resp.json(); } catch (e) {}
+        },
+        async refreshSequenceTree() {
+            try {
+                const resp = await fetch('/api/sequence/tree');
+                if (resp.ok) {
+                    this.sequenceTree = await resp.json();
+                    this.$nextTick(() => this.scrollToActiveSequenceItem());
+                }
+            } catch (e) {}
+        },
+        async refreshImages() {
+            try {
+                const resp = await fetch('/api/images');
+                const data = await resp.json();
+                this.imageStats = data.current || {};
+                this.sessionStats = data.session || {};
+                this.imageHistory = data.history || [];
+                this.hfrHistory = this.imageHistory.map(h => ({ timestamp: h.timestamp, hfr: parseFloat(h.hfr) || null }));
+                this.$nextTick(() => this.updateChart());
+            } catch (e) {}
+        },
+        async refreshTelemetry() {
+            try { const resp = await fetch('/api/telemetry'); this.detailedTel = await resp.json(); } catch (e) {}
+        },
+        async refreshEnvironment() {
+            try { const resp = await fetch('/api/environment'); this.environment = await resp.json(); } catch (e) {}
+        },
+        async refreshGuider() {
+            try { const resp = await fetch('/api/guider'); this.guiderDetails = await resp.json(); } catch (e) {}
+        },
+        async refreshMetrics() {
+            try {
+                const resp = await fetch('/api/metrics/snapshot');
+                const data = await resp.json();
+                this.metricsSnapshot = data.snapshot || {};
+                this.metricsSnapshotTime = new Date(data.timestamp).toLocaleTimeString();
+            } catch (e) {}
+        },
+        async refreshMetricsHistory() {
+            try {
+                const resp = await fetch(`/api/metrics/history?minutes=${this.metricsHistoryMinutes}`);
+                const data = await resp.json();
+                this.metricsHistory = data.history || [];
+                this.updateMetricsChart();
+            } catch (e) {}
+        },
+        async refreshSessionMetadata() {
+            try {
+                const resp = await fetch('/api/session_metadata');
+                this.sessionMetadata = await resp.json();
+            } catch (e) {}
+        },
+        refreshAllAnalytics() {
+            this.refreshMetrics();
+            this.refreshMetricsHistory();
+            this.refreshSessionMetadata();
+            this.reloadProfile();
+        },
+        async reloadProfile() {
+            try {
+                await fetch('/api/reload_profile', { method: 'POST' });
+                setTimeout(() => this.loadState(), 1000);
+            } catch (e) {}
+        },
+        async executeCommand(action, params = {}) {
+            try {
+                await fetch('/api/command', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ action, params })
+                });
+            } catch (e) { console.error('Command error:', e); }
+        },
+        quickCapture() { this.executeCommand('exposure', { duration: 30, gain: 85, offset: 10 }); },
+        async sendMessage() {
+            if (!this.chatInput.trim()) return;
+            const msg = this.chatInput;
+            this.chatInput = '';
+            try {
+                await fetch('/api/chat', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ message: msg })
+                });
+            } catch (e) { console.error('Send error:', e); }
+        },
+        capture() {
+            const count = parseInt(this.cameraInputs.count) || 1;
+            const duration = parseFloat(this.cameraInputs.duration) || 30;
+            const gain = parseInt(this.cameraInputs.gain);
+            const offset = parseInt(this.cameraInputs.offset);
+            const params = { duration, gain, offset };
+            if (count > 1) { params.count = count; this.executeCommand('series', params); }
+            else { this.executeCommand('exposure', params); }
+        },
+        async setAiMode(mode) {
+            try {
+                await fetch('/api/ai_mode', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ mode })
+                });
+            } catch (e) {}
+        },
+        async clearChat() {
+            if (!confirm('Очистить чат?')) return;
+            await fetch('/api/clear_chat', { method: 'POST' });
+        },
+        async clearLog() { await fetch('/api/clear_log', { method: 'POST' }); },
+        async saveSettings() {
+            try {
+                const resp = await fetch('/api/settings', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ settings: this.settingsForm })
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    this.settings = JSON.parse(JSON.stringify(this.settingsForm));
+                    this.guiderUnit = this.settings.guider_unit || 'arcsec';
+                    this.showSettings = false;
+                    this.chatMessages.push({
+                        time: new Date().toLocaleTimeString(),
+                        sender: 'Система',
+                        message: 'Настройки сохранены'
+                    });
+                    this.$nextTick(() => this.scrollChat());
+                } else { alert('Ошибка: ' + (data.detail || 'Unknown')); }
+            } catch (e) { alert('Ошибка: ' + e); }
+        },
+        async runApiTest() {
+            if (!confirm('Запустить тест всех команд API?')) return;
+            try {
+                const resp = await fetch('/api/test_commands', { method: 'POST' });
+                const data = await resp.json();
+                this.testResults = data.results || [];
+                this.chatMessages.push({
+                    time: new Date().toLocaleTimeString(),
+                    sender: 'Система',
+                    message: `Тест API: ${this.testResults.filter(r => r.status === 'OK').length}/${this.testResults.length} успешно`
+                });
+                this.$nextTick(() => this.scrollChat());
+            } catch (e) { alert('Ошибка теста: ' + e); }
+        }
+    };
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,41 @@
+{
+    "host": "localhost",
+    "port": 1888,
+    "ollama": "http://localhost:11434",
+    "model": "gemma4:12b",
+    "chat_context_length": 10,
+    "log_level": "WARNING",
+    "profiles_dir": "C:\\Users\\istep\\AppData\\Local\\NINA\\Profiles",
+    "sequence_dir": "C:\\Users\\istep\\YandexDisk\\Хобби\\Астрономия\\ПО\\N.I.N.A\\Set templates",
+    "session_metadata_dir": "C:\\Users\\istep\\YandexDisk\\Хобби\\Астрономия\\Фото\\Сессии",
+    "guider_unit": "arcsec",
+    "guider_pixel_scale": 1.0,
+    "coord_units": "degrees",
+    "prometheus": {
+        "enabled": true,
+        "retention_hours": 24,
+        "scrape_interval_seconds": 5,
+        "history_max_points": 5000
+    },
+    "session_metadata": {
+        "enabled": true,
+        "auto_detect": true,
+        "scan_interval_seconds": 10
+    },
+    "modules": {
+        "sequence": true,
+        "camera": true,
+        "mount": true,
+        "focuser": true,
+        "filters": true,
+        "guider": true,
+        "rotator": false,
+        "profile": true,
+        "telemetry": true,
+        "weather": true,
+        "stats": true,
+        "prometheus": true,
+        "session_metadata": true
+    },
+    "nina_root": "C:\\Users\\istep\\AppData\\Local\\NINA"
+}
